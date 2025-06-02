@@ -74,3 +74,9 @@ applyTo: "**"
 - Always provide a real or simulated data example when dealing with layout or parsing.
 
 ---
+### 🛠️ Development Tools
+- **Vite**: For fast development and build tooling.
+- **Vitest**: For unit testing and test-driven development.
+- **Prettier**: For code formatting.
+- **ESLint**: For linting and code quality.
+- **Tailwind CSS**: For utility-first CSS styling.

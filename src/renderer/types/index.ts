@@ -1,0 +1,92 @@
+export interface StaffMember {
+  id: string;
+  name: string;
+  workHours: string;
+  comments: string;
+  isCustom?: boolean; // For manually added staff
+}
+
+export interface RoomStaff {
+  pass?: StaffMember;
+  opSSK?: StaffMember;
+  aneSSK?: StaffMember;
+  students?: StaffMember[];
+}
+
+export interface OperatingRoom {
+  id: string;
+  name: string;
+  staff: RoomStaff;
+}
+
+export interface CorridorRole {
+  id: string;
+  name: string;
+  staff?: StaffMember;
+}
+
+export interface DaySchedule {
+  id: string;
+  dayName: string;
+  date: Date;
+  rooms: OperatingRoom[];
+  corridorStaff: CorridorRole[];
+  availableStaff: StaffMember[];
+}
+
+export interface WeekSchedule {
+  id: string;
+  name: string;
+  days: DaySchedule[];
+}
+
+export interface AppSettings {
+  currentDay: string; // Day ID
+  currentWeek: string; // Week ID
+  isDashboardMode: boolean;
+  autoRefresh: boolean;
+  refreshInterval: number; // milliseconds
+}
+
+export interface DragItem {
+  id: string;
+  type: 'staff';
+  staffMember: StaffMember;
+}
+
+export interface DropTarget {
+  type: 'room' | 'corridor' | 'available';
+  roomId?: string;
+  role?: string;
+  corridorRoleId?: string;
+}
+
+// Swedish day names
+export const SWEDISH_DAYS = [
+  'Måndag',
+  'Tisdag', 
+  'Onsdag',
+  'Torsdag',
+  'Fredag',
+  'Lördag',
+  'Söndag'
+] as const;
+
+export type SwedishDay = typeof SWEDISH_DAYS[number];
+
+// Operating room roles
+export const ROOM_ROLES = {
+  PASS: 'Pass',
+  OP_SSK: 'Op SSK',
+  ANE_SSK: 'Ane SSK',
+  STUDENT: 'Student'
+} as const;
+
+export type RoomRole = typeof ROOM_ROLES[keyof typeof ROOM_ROLES];
+
+// Default corridor roles (can be customized)
+export const DEFAULT_CORRIDOR_ROLES = [
+  'Sök/Mottagning',
+  'Korridorsansvar',
+  'Beredskapsstråk'
+] as const;

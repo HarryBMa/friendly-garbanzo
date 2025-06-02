@@ -1,0 +1,1 @@
+"use strict";const r=require("electron");r.contextBridge.exposeInMainWorld("electronAPI",{importExcel:e=>r.ipcRenderer.invoke("import-excel",e),exportExcel:e=>r.ipcRenderer.invoke("export-excel",e),toggleFullscreen:()=>r.ipcRenderer.invoke("toggle-fullscreen"),onMainProcessMessage:e=>r.ipcRenderer.on("main-process-message",(o,n)=>e(n))});
