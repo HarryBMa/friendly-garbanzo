@@ -379,24 +379,29 @@ export default function Admin() {
               <div className="card bg-base-200 shadow-sm">
                 <div className="card-body p-4">
                   <h2 className="card-title text-lg">{sv.staff.corridor}</h2>
-                  
-                  <div className="space-y-3">
+                    <div className="space-y-3">
                     {currentDay.corridorStaff.map((role) => (
-                      <div key={role.id} className="p-3 border-2 border-dashed border-base-300 rounded min-h-[80px]">
-                        <div className="text-sm font-semibold text-base-content/70 mb-2">
+                      <DroppableZone key={role.id} id={`corridor-${role.id}`}>
+                        <div className="text-sm font-semibold text-base-content/70 mb-2 p-2">
                           {role.name}
                         </div>
                         {role.staff ? (
-                          <div className="bg-accent text-accent-content p-2 rounded text-xs">
+                          <div className="bg-accent text-accent-content p-2 rounded text-xs m-2">
                             <div className="font-semibold">{role.staff.name}</div>
                             <div className="text-xs opacity-80">{role.staff.workHours}</div>
+                            <button 
+                              onClick={() => unassignStaff(role.staff!.id)}
+                              className="btn btn-xs btn-circle float-right mt-1"
+                            >
+                              ×
+                            </button>
                           </div>
                         ) : (
                           <div className="text-center text-base-content/40 text-xs py-3">
                             Dra personal hit
                           </div>
                         )}
-                      </div>
+                      </DroppableZone>
                     ))}
                   </div>
                 </div>
