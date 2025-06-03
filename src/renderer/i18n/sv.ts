@@ -44,10 +44,11 @@ export const sv = {
     pager: 'Telefon',
     function: 'Funktion'
   },
-  
-  // Actions
+    // Actions
   actions: {
     import: 'Importera',
+    importDual: 'Importera OP + ANE',
+    importSingle: 'Importera enskild fil',
     export: 'Exportera',
     save: 'Spara',
     cancel: 'Avbryt',
@@ -59,16 +60,20 @@ export const sv = {
     clear: 'Rensa',
     refresh: 'Uppdatera'
   },
-  
-  // File operations
+    // File operations
   files: {
     importExcel: 'Importera från Excel',
+    importDualExcel: 'Importera OP- och ANE-filer',
     exportExcel: 'Exportera till Excel',
+    selectFiles: 'Välj OP- och ANE-filer',
     selectFile: 'Välj fil',
     fileImported: 'Fil importerad',
+    filesImported: 'Filer importerade',
     fileExported: 'Fil exporterad',
     importError: 'Import misslyckades',
-    exportError: 'Export misslyckades'
+    exportError: 'Export misslyckades',
+    dualImportSuccess: 'OP- och ANE-filer importerade',
+    weekInfo: 'Vecka {week}: {opFile} + {aneFile}'
   },
   
   // Messages

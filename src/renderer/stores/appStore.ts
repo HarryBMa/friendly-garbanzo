@@ -25,13 +25,15 @@ interface AppState {
   setCurrentDay: (dayId: string) => void;
   setCurrentWeek: (weekId: string) => void;
   setDashboardMode: (isEnabled: boolean) => void;
-  
-  // Staff management
+    // Staff management
   addStaff: (staff: StaffMember) => void;
   removeStaff: (staffId: string) => void;
   updateStaff: (staffId: string, updates: Partial<StaffMember>) => void;
   importStaff: (staffList: StaffMember[]) => void;
-    // Schedule management
+  importDualStaff: (staffList: StaffMember[], weekInfo: { week: string; opFileName: string; aneFileName: string }) => void;
+  importStructuredExcel: (files: File[]) => Promise<{ success: boolean; week: string; staffCount: number; summary?: any; error?: string }>;
+  
+  // Schedule management
   createWeek: (name: string) => WeekSchedule;
   duplicateWeek: (weekId: string, newName: string) => WeekSchedule;
   updateDaySchedule: (weekId: string, dayId: string, schedule: Partial<DaySchedule>) => void;
@@ -152,12 +154,68 @@ export const useAppStore = create<AppState>()(
           availableStaff: state.availableStaff.map(s => 
             s.id === staffId ? { ...s, ...updates } : s
           )
-        })),
-
-      importStaff: (staffList: StaffMember[]) =>
+        })),      importStaff: (staffList: StaffMember[]) =>
         set((state) => ({
           availableStaff: [...state.availableStaff, ...staffList]
         })),
+
+      importDualStaff: (staffList: StaffMember[], weekInfo: { week: string; opFileName: string; aneFileName: string }) =>
+        set((state) => {
+          // Add metadata about the import to current week if available
+          const currentWeek = state.weeks.find(w => w.id === state.currentWeekId);
+          if (currentWeek) {
+            currentWeek.name = `${weekInfo.week} (${weekInfo.opFileName} + ${weekInfo.aneFileName})`;
+          }
+          
+          return {
+            availableStaff: [...state.availableStaff, ...staffList]
+          };
+        }),
+
+      importStructuredExcel: async (files: File[]) => {
+        try {
+          // Import the new parser functions
+          const { parseExcelFiles } = await import('../utils/excelParser');
+          const { convertParsedStaffToMembers, getParsedStaffSummary } = await import('../utils/staffConverter');
+          
+          // Parse the Excel files using the new structured parser
+          const parseResult = await parseExcelFiles(files);
+          
+          // Convert parsed staff to StaffMember format
+          const staffMembers = convertParsedStaffToMembers(parseResult.staff);
+          
+          // Get summary statistics
+          const summary = getParsedStaffSummary(parseResult.staff);
+          
+          // Update store state
+          set((state) => {
+            // Add metadata about the import to current week if available
+            const currentWeek = state.weeks.find(w => w.id === state.currentWeekId);
+            if (currentWeek) {
+              currentWeek.name = `${parseResult.week} (Structured Import)`;
+            }
+            
+            return {
+              availableStaff: [...state.availableStaff, ...staffMembers]
+            };
+          });
+          
+          return {
+            success: true,
+            week: parseResult.week,
+            staffCount: staffMembers.length,
+            summary
+          };
+        } catch (error) {
+          console.error('Structured Excel import error:', error);
+          return {
+            success: false,
+            week: '',
+            staffCount: 0,
+            error: error instanceof Error ? error.message : 'Unknown error occurred'
+          };
+        }
+      },
 
       // Schedule management
       createWeek: (name: string) => {

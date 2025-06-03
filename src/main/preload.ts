@@ -4,6 +4,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 // the ipcRenderer without exposing the entire object
 contextBridge.exposeInMainWorld('electronAPI', {
   importExcel: (filePath: string) => ipcRenderer.invoke('import-excel', filePath),
+  importDualExcel: () => ipcRenderer.invoke('import-dual-excel'),
   exportExcel: (data: any) => ipcRenderer.invoke('export-excel', data),
   toggleFullscreen: () => ipcRenderer.invoke('toggle-fullscreen'),
   onMainProcessMessage: (callback: (value: string) => void) => 

@@ -1,88 +1,129 @@
-import { describe, it, expect } from 'vitest';
-import { parseExcelData, validateStaffMember, createStaffMember } from '../utils/excelParser';
+// excelParser.test.ts
+import { describe, it, expect, vi } from 'vitest';
+import { parseExcelFiles } from './excelParser';
+
+// Create a mock worksheet
+const createMockWorksheet = () => ({
+  rowCount: 10,  getCell: vi.fn((row: number, col: number) => {    // Mock header row data (row 2 for ANE, row 3 for OP)
+    if ((row === 2 && col >= 3 && col <= 7) || (row === 3 && col >= 3 && col <= 7)) {
+      const days = ['Mån 240610', 'Tis 240611', 'Ons 240612', 'Tor 240613', 'Fre 240614'];
+      return { value: days[col - 3] || '', toString: () => days[col - 3] || '' };
+    }
+      // Mock staff names in column B (row 4+)
+    if (col === 2 && row >= 4) {
+      const names = ['Anna Andersson', 'Björn Eriksson', 'usk', 'Carl Larsson'];
+      return { value: names[row - 4] || '', toString: () => names[row - 4] || '' };
+    }
+    
+    // Mock work hours data
+    if (row >= 4 && col >= 3 && col <= 7) {
+      return { value: '08:00-16:00', toString: () => '08:00-16:00' };
+    }
+    
+    return { value: '', toString: () => '' };
+  })
+});
+
+// Mock ExcelJS
+vi.mock('exceljs', () => ({
+  Workbook: class {
+    worksheets = [createMockWorksheet()];
+    xlsx = {
+      async load() {
+        return Promise.resolve();
+      }
+    };
+  }
+}));
 
 describe('excelParser', () => {
-  describe('parseExcelData', () => {
-    it('should parse valid Excel data correctly', () => {
-      const input = [
-        { name: 'Anna Andersson', workHours: '08:00-16:00', comments: 'Erfaren SSK' },
-        { name: 'Björn Eriksson', workHours: 'Heldag', comments: '' }
+  describe('parseExcelFiles', () => {
+    it('should parse two Excel files correctly', async () => {
+      const mockFiles = [
+        { 
+          name: 'op_schema.xlsx',
+          arrayBuffer: () => Promise.resolve(new ArrayBuffer(0))
+        } as File,
+        { 
+          name: 'ane_schema.xlsx',
+          arrayBuffer: () => Promise.resolve(new ArrayBuffer(0))
+        } as File
       ];
 
-      const result = parseExcelData(input);
+      const result = await parseExcelFiles(mockFiles);
 
-      expect(result.success).toBe(true);
-      expect(result.staff).toHaveLength(2);
-      expect(result.staff[0].name).toBe('Anna Andersson');
-      expect(result.staff[0].workHours).toBe('08:00-16:00');
-      expect(result.staff[1].name).toBe('Björn Eriksson');
-      expect(result.staff[1].workHours).toBe('Heldag');
+      expect(result.week).toBe('v.24');
+      expect(result.staff).toBeInstanceOf(Array);
+      expect(result.staff.length).toBeGreaterThan(0);
     });
 
-    it('should handle empty data', () => {
-      const result = parseExcelData([]);
+    it('should throw error if not exactly 2 files provided', async () => {
+      const singleFile = [
+        { 
+          name: 'single.xlsx',
+          arrayBuffer: () => Promise.resolve(new ArrayBuffer(0))
+        } as File
+      ];
+
+      await expect(parseExcelFiles(singleFile)).rejects.toThrow('Exactly two Excel files are required');
+    });
+
+    it('should detect OP and ANE file types correctly', async () => {
+      const mockFiles = [
+        { 
+          name: 'vecka48_op.xlsx',
+          arrayBuffer: () => Promise.resolve(new ArrayBuffer(0))
+        } as File,
+        { 
+          name: 'vecka48_ane.xlsx',
+          arrayBuffer: () => Promise.resolve(new ArrayBuffer(0))
+        } as File
+      ];
+
+      const result = await parseExcelFiles(mockFiles);
       
-      expect(result.success).toBe(false);
-      expect(result.errors).toContain('Ingen data att importera');
+      // Should have staff from both OP and ANE sources
+      const opStaff = result.staff.filter(s => s.sourceFile === 'op');
+      const aneStaff = result.staff.filter(s => s.sourceFile === 'ane');
+      
+      expect(opStaff.length).toBeGreaterThan(0);
+      expect(aneStaff.length).toBeGreaterThan(0);
     });
 
-    it('should validate required fields', () => {
-      const input = [
-        { name: '', workHours: '08:00-16:00', comments: '' },
-        { name: 'Test Person', workHours: '', comments: '' }
+    it('should handle role switching when USK appears', async () => {
+      const mockFiles = [
+        { 
+          name: 'op_test.xlsx',
+          arrayBuffer: () => Promise.resolve(new ArrayBuffer(0))
+        } as File,
+        { 
+          name: 'ane_test.xlsx',
+          arrayBuffer: () => Promise.resolve(new ArrayBuffer(0))
+        } as File
       ];
 
-      const result = parseExcelData(input);
-
-      expect(result.success).toBe(false);
-      expect(result.errors).toHaveLength(1); // Missing name error
-      expect(result.warnings).toHaveLength(1); // Missing work hours warning
-    });
-  });
-
-  describe('validateStaffMember', () => {
-    it('should validate correct staff member', () => {
-      const staff = {
-        name: 'Anna Andersson',
-        workHours: '08:00-16:00',
-        comments: 'Test comment'
-      };
-
-      const errors = validateStaffMember(staff);
-      expect(errors).toHaveLength(0);
+      const result = await parseExcelFiles(mockFiles);
+      
+      // Check that we have different roles
+      const roles = new Set(result.staff.map(s => s.role));
+      expect(roles.size).toBeGreaterThan(1);
     });
 
-    it('should catch validation errors', () => {
-      const staff = {
-        name: '',
-        workHours: 'A'.repeat(100), // Too long
-        comments: 'B'.repeat(600) // Too long
-      };
+    it('should extract week number from date correctly', async () => {
+      const mockFiles = [
+        { 
+          name: 'op_schema.xlsx',
+          arrayBuffer: () => Promise.resolve(new ArrayBuffer(0))
+        } as File,
+        { 
+          name: 'ane_schema.xlsx',
+          arrayBuffer: () => Promise.resolve(new ArrayBuffer(0))
+        } as File
+      ];
 
-      const errors = validateStaffMember(staff);
-      expect(errors.length).toBeGreaterThan(0);
-      expect(errors).toContain('Namn krävs');
-    });
-  });
-
-  describe('createStaffMember', () => {
-    it('should create staff member with default values', () => {
-      const staff = createStaffMember('Test Person');
-
-      expect(staff.name).toBe('Test Person');
-      expect(staff.workHours).toBe('');
-      expect(staff.comments).toBe('');
-      expect(staff.isCustom).toBe(true);
-      expect(staff.id).toBeDefined();
-    });
-
-    it('should create staff member with provided values', () => {
-      const staff = createStaffMember('Test Person', '08:00-16:00', 'Test comment', false);
-
-      expect(staff.name).toBe('Test Person');
-      expect(staff.workHours).toBe('08:00-16:00');
-      expect(staff.comments).toBe('Test comment');
-      expect(staff.isCustom).toBe(false);
+      const result = await parseExcelFiles(mockFiles);
+      
+      expect(result.week).toBe('v.24');
     });
   });
 });

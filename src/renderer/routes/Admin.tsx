@@ -79,8 +79,7 @@ function DroppableZone({
   );
 }
 
-export default function Admin() {
-  const { 
+export default function Admin() {  const { 
     currentWeekId, 
     currentDayId, 
     getCurrentDay, 
@@ -91,7 +90,8 @@ export default function Admin() {
     assignStaffToRoom,
     assignStaffToCorridor,
     unassignStaff,
-    importStaff
+    importStaff,
+    importDualStaff
   } = useAppStore();
 
   const [activeStaff, setActiveStaff] = React.useState<StaffMember | null>(null);
@@ -156,32 +156,66 @@ export default function Admin() {
       console.error('Excel import error:', error);
       alert('Ett fel uppstod vid import av Excel-fil');
     }
-  };  const handleExportExcel = async () => {
+  };
+
+  const handleImportDualExcel = async () => {
     try {
-      const currentWeek = getCurrentWeek();
-      const scheduleData = {
-        days: currentWeek?.days.map(day => ({
-          id: day.id,
-          name: day.id, // Using id as name since DaySchedule doesn't have a name field
-          operatingRooms: day.rooms.map(room => ({
-            name: room.name,
-            pass: room.staff.pass,
-            opSSK: room.staff.opSSK,
-            aneSSK: room.staff.aneSSK
-          })),
-          corridorStaff: day.corridorStaff
-        })) || []
-      };
-      
-      const result = await window.electronAPI?.exportExcel(scheduleData);
-      if (result?.success) {
-        alert(`Schema exporterat till: ${result.filePath}`);
+      const result = await window.electronAPI?.importDualExcel();
+      if (result?.success && result.data.length > 0) {
+        const staffWithIds = result.data.map((staff: any) => ({
+          ...staff,
+          id: `staff-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          isCustom: false // These are from official Excel files
+        }));
+        
+        // Use the new dual import with metadata
+        importDualStaff(staffWithIds, {
+          week: result.week,
+          opFileName: result.opFileName,
+          aneFileName: result.aneFileName
+        });
+        
+        // Show detailed success message
+        let message = `Importerade ${result.data.length} personal från OP- och ANE-filer\n`;
+        message += `Vecka: ${result.week}\n`;
+        message += `OP-fil: ${result.opFileName}\n`;
+        message += `ANE-fil: ${result.aneFileName}`;
+        
+        if (result.warnings && result.warnings.length > 0) {
+          message += `\n\nVarningar:\n${result.warnings.join('\n')}`;
+        }
+        
+        alert(message);
       } else {
-        alert('Export misslyckades: ' + (result?.error || 'Okänt fel'));
+        const errorMsg = result?.errors?.join('\n') || 'Import misslyckades eller inga data hittades';
+        alert(errorMsg);
       }
     } catch (error) {
-      console.error('Excel export error:', error);
-      alert('Ett fel uppstod vid export av schema');
+      console.error('Dual Excel import error:', error);
+      alert('Ett fel uppstod vid import av Excel-filer');
+    }  };
+  const handleAddCustomStaff = () => {
+    const name = prompt('Ange namn på personal:');
+    if (!name || name.trim() === '') return;
+    
+    const workHours = prompt('Ange arbetstid (valfritt):') || '';
+    const comments = prompt('Ange kommentarer (valfritt):') || '';
+    
+    const customStaff = {
+      id: `staff-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      name: name.trim(),
+      workHours: workHours.trim(),
+      comments: comments.trim(),
+      isCustom: true
+    };
+    
+    // Add to the current day's available staff directly
+    const currentDay = getCurrentDay();
+    if (currentDay) {
+      currentDay.availableStaff.push(customStaff);
+      alert(`Lade till ${customStaff.name} som tillfällig personal`);
+    } else {
+      alert('Ingen aktiv dag vald');
     }
   };
 
@@ -245,24 +279,34 @@ export default function Admin() {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             {/* Available Staff Panel */}          <div className="lg:col-span-1">
               <div className="bg-white shadow-sm rounded-lg border border-gray-200">
-                <div className="p-4">
-                  <h2 className="text-lg font-semibold">{sv.staff.available}</h2>
-                    {/* Import/Add Controls */}                  <div className="flex gap-2 mb-4">
+                <div className="p-4">                  <h2 className="text-lg font-semibold">{sv.staff.available}</h2>
+                    {/* Import/Add Controls */}
+                  <div className="space-y-2 mb-4">
+                    {/* Primary: Dual Import */}
                     <button 
-                      className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 flex-1"
-                      onClick={handleImportExcel}
+                      className="w-full px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 font-medium"
+                      onClick={handleImportDualExcel}
+                      title="Importera både OP- och ANE-filer tillsammans"
                     >
-                      {sv.actions.import}
+                      {sv.actions.importDual}
                     </button>
-                    <button 
-                      className="px-3 py-1.5 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 flex-1"
-                      onClick={handleExportExcel}
-                    >
-                      {sv.actions.export}
-                    </button>
-                    <button className="px-3 py-1.5 border border-gray-300 text-gray-700 text-sm rounded hover:bg-gray-50">
-                      {sv.actions.add}
-                    </button>
+                      {/* Secondary actions */}
+                    <div className="flex gap-2">
+                      <button 
+                        className="px-3 py-1.5 bg-gray-500 text-white text-xs rounded hover:bg-gray-600 flex-1"
+                        onClick={handleImportExcel}
+                        title="Importera en enskild Excel-fil"
+                      >
+                        {sv.actions.importSingle}
+                      </button>
+                      <button 
+                        className="px-3 py-1.5 bg-green-600 text-white text-xs rounded hover:bg-green-700 flex-1"
+                        onClick={handleAddCustomStaff}
+                        title="Lägg till tillfällig personal manuellt"
+                      >
+                        {sv.actions.add}
+                      </button>
+                    </div>
                   </div>{/* Staff List */}
                   <SortableContext 
                     items={currentDay.availableStaff.map(s => s.id)}

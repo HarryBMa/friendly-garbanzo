@@ -1,171 +1,89 @@
-import type { StaffMember } from '../types';
+// excelParser.ts
+// This file parses two Excel files (OP and ANE) into structured staff schedule data.
 
-export interface ExcelParseResult {
-  success: boolean;
-  staff: StaffMember[];
-  errors: string[];
-  warnings: string[];
+import * as ExcelJS from 'exceljs';
+import { getWeekNumber } from './dateHelpers';
+
+export type Role = 'op_ssk' | 'op_usk' | 'ane_ssk' | 'ane_usk';
+export type Source = 'op' | 'ane';
+
+export interface ParsedStaff {
+  name: string;
+  role: Role;
+  weekday: string;
+  date: string;
+  workHours?: string;
+  comments?: string;
+  extraInfo?: string;
+  sourceFile: Source;
 }
 
-/**
- * Parse Excel data from the main process
- * Expected format: Name, Work hours, Comments
- */
-export function parseExcelData(rawData: any[]): ExcelParseResult {
-  const staff: StaffMember[] = [];
-  const errors: string[] = [];
-  const warnings: string[] = [];
+export async function parseExcelFiles(files: File[]): Promise<{ week: string; staff: ParsedStaff[] }> {
+  if (files.length !== 2) throw new Error('Exactly two Excel files are required (OP + ANE).');
 
-  if (!Array.isArray(rawData) || rawData.length === 0) {
-    errors.push('Ingen data att importera');
-    return { success: false, staff, errors, warnings };
-  }
+  let week = '';
+  const allStaff: ParsedStaff[] = [];
 
-  rawData.forEach((row, index) => {
-    const rowNumber = index + 1;
-    
-    if (!row || typeof row !== 'object') {
-      errors.push(`Rad ${rowNumber}: Ogiltig dataformat`);
-      return;
+  for (const file of files) {
+    const workbook = new ExcelJS.Workbook();
+    const buffer = await file.arrayBuffer();
+    await workbook.xlsx.load(buffer);
+
+    const sheet = workbook.worksheets[0];
+    const sourceFile: Source = file.name.toLowerCase().includes('ane') ? 'ane' : 'op';    const isAne = sourceFile === 'ane';
+    const dayHeaderRow = isAne ? 2 : 3;
+    const dayStartCol = 3; // Column C
+    let currentRole: Role = sourceFile === 'op' ? 'op_ssk' : 'ane_ssk';
+
+    // Extract weekdays + dates from header
+    const weekdays: { col: number; name: string; date: string }[] = [];
+    for (let col = dayStartCol; col < dayStartCol + 5; col++) {
+      const raw = sheet.getCell(dayHeaderRow, col).value?.toString().trim() || '';      const [weekday, date] = raw.split(' ');
+      if (!week && date) {
+        // Parse date YYMMDD format and calculate week number
+        const year = 2000 + parseInt(date.slice(0, 2));
+        const month = parseInt(date.slice(2, 4)) - 1; // JS months are 0-based
+        const day = parseInt(date.slice(4, 6));
+        const dateObj = new Date(year, month, day);
+        week = `v.${getWeekNumber(dateObj).toString().padStart(2, '0')}`;
+      }
+      weekdays.push({ col, name: weekday, date });
     }
 
-    const name = sanitizeName(row.name || row.Name || '');
-    const workHours = sanitizeWorkHours(row.workHours || row['Work hours'] || row.arbetstid || '');
-    const comments = sanitizeComments(row.comments || row.Comments || row.kommentarer || '');
+    // Iterate through rows to find staff
+    for (let row = dayHeaderRow + 1; row < sheet.rowCount; row++) {
+      const nameCell = sheet.getCell(row, 2).value?.toString().trim();
+      if (!nameCell) continue;
 
-    // Validation
-    if (!name.trim()) {
-      errors.push(`Rad ${rowNumber}: Namn saknas`);
-      return;
+      // Detect role shift
+      const lower = nameCell.toLowerCase();
+      if (lower.includes('usk')) {
+        currentRole = isAne ? 'ane_usk' : 'op_usk';
+        continue;
+      }
+      if (['käk', 'antal', 'vakant'].some((k) => lower.includes(k))) continue;
+
+      for (const { col, name: weekday, date } of weekdays) {
+        const workHours = sheet.getCell(row, col).value?.toString().trim() || '';
+        const comment = sheet.getCell(row + 1, col).value?.toString().trim() || '';
+        const extra = sheet.getCell(row + 2, col).value?.toString().trim() || '';
+
+        // Skip empty schedule cells
+        if (!workHours && !comment && !extra) continue;
+
+        allStaff.push({
+          name: nameCell,
+          role: currentRole,
+          weekday,
+          date,
+          workHours,
+          comments: comment || undefined,
+          extraInfo: extra || undefined,
+          sourceFile,
+        });
+      }
     }
-
-    if (!workHours.trim()) {
-      warnings.push(`Rad ${rowNumber}: Arbetstid saknas för ${name}`);
-    }
-
-    // Check for duplicates
-    if (staff.some(s => s.name.toLowerCase() === name.toLowerCase())) {
-      warnings.push(`Rad ${rowNumber}: Dublett av ${name} ignorerad`);
-      return;
-    }
-
-    staff.push({
-      id: `staff-${Date.now()}-${index}`,
-      name,
-      workHours,
-      comments,
-      isCustom: false
-    });
-  });
-
-  return {
-    success: errors.length === 0,
-    staff,
-    errors,
-    warnings
-  };
-}
-
-/**
- * Sanitize name field - handle Swedish characters properly
- */
-function sanitizeName(name: string): string {
-  if (typeof name !== 'string') return '';
-  
-  return name
-    .trim()
-    .replace(/\s+/g, ' ') // Multiple spaces to single space
-    .replace(/[^\w\såäöÅÄÖ\-\.']/g, '') // Keep only valid characters
-    .slice(0, 100); // Reasonable length limit
-}
-
-/**
- * Sanitize work hours field
- * Accept formats like: "08:00-16:00", "8-16", "Heldag", "Natt", etc.
- */
-function sanitizeWorkHours(workHours: string): string {
-  if (typeof workHours !== 'string') return '';
-  
-  const cleaned = workHours.trim();
-  
-  // Common Swedish work hour patterns
-  const validPatterns = [
-    /^\d{1,2}:\d{2}-\d{1,2}:\d{2}$/, // 08:00-16:00
-    /^\d{1,2}-\d{1,2}$/, // 8-16
-    /^[Hh]eldag$/, // Heldag
-    /^[Nn]att$/, // Natt
-    /^[Dd]ag$/, // Dag
-    /^[Kk]väll$/, // Kväll
-    /^[Bb]eredskap$/, // Beredskap
-    /^[Jj]our$/ // Jour
-  ];
-
-  // If it matches a known pattern, return as-is
-  if (validPatterns.some(pattern => pattern.test(cleaned))) {
-    return cleaned;
   }
 
-  // Try to normalize time formats
-  const timeMatch = cleaned.match(/(\d{1,2}).*?(\d{1,2})/);
-  if (timeMatch) {
-    const [, start, end] = timeMatch;
-    return `${start.padStart(2, '0')}:00-${end.padStart(2, '0')}:00`;
-  }
-
-  return cleaned.slice(0, 50); // Return original if no pattern matches
-}
-
-/**
- * Sanitize comments field
- */
-function sanitizeComments(comments: string): string {
-  if (typeof comments !== 'string') return '';
-  
-  return comments
-    .trim()
-    .replace(/\s+/g, ' ') // Multiple spaces to single space
-    .slice(0, 500); // Reasonable length limit
-}
-
-/**
- * Validate staff member data
- */
-export function validateStaffMember(staff: Partial<StaffMember>): string[] {
-  const errors: string[] = [];
-
-  if (!staff.name?.trim()) {
-    errors.push('Namn krävs');
-  }
-
-  if (staff.name && staff.name.length > 100) {
-    errors.push('Namn för långt (max 100 tecken)');
-  }
-
-  if (staff.workHours && staff.workHours.length > 50) {
-    errors.push('Arbetstid för lång (max 50 tecken)');
-  }
-
-  if (staff.comments && staff.comments.length > 500) {
-    errors.push('Kommentarer för långa (max 500 tecken)');
-  }
-
-  return errors;
-}
-
-/**
- * Create a new staff member with default values
- */
-export function createStaffMember(
-  name: string, 
-  workHours: string = '', 
-  comments: string = '',
-  isCustom: boolean = true
-): StaffMember {
-  return {
-    id: `staff-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    name: sanitizeName(name),
-    workHours: sanitizeWorkHours(workHours),
-    comments: sanitizeComments(comments),
-    isCustom
-  };
+  return { week, staff: allStaff };
 }

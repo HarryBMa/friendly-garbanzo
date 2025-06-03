@@ -103,3 +103,36 @@ export const DEFAULT_CORRIDOR_ROLES = [
   'Korridorsansvar',
   'Beredskapsstråk'
 ] as const;
+
+// Dual Excel Import Types
+export interface DualExcelImportResult {
+  success: boolean;
+  week: string;
+  opFileName: string;
+  aneFileName: string;
+  staff: StaffMember[];
+  errors: string[];
+  warnings: string[];
+}
+
+// New Excel Parser Types (for direct ExcelJS parsing)
+export type Role = 'op_ssk' | 'op_usk' | 'ane_ssk' | 'ane_usk';
+export type Source = 'op' | 'ane';
+
+export interface ParsedStaff {
+  name: string;
+  role: Role;
+  weekday: string;
+  date: string;
+  workHours?: string;
+  comments?: string;
+  extraInfo?: string;
+  sourceFile: Source;
+}
+
+export interface ExcelFileInfo {
+  file: File;
+  fileName: string;
+  type: 'OP' | 'ANE';
+  isValid: boolean;
+}

@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { importStaffFromExcel, exportScheduleToExcel } from './fileHandler';
+import { importStaffFromExcel, exportScheduleToExcel, importDualExcelFiles } from './fileHandler';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -81,6 +81,10 @@ app.whenReady().then(createWindow);
 // Handle file operations for Excel import/export
 ipcMain.handle('import-excel', async (_event, filePath?: string) => {
   return await importStaffFromExcel(filePath);
+});
+
+ipcMain.handle('import-dual-excel', async () => {
+  return await importDualExcelFiles();
 });
 
 ipcMain.handle('export-excel', async (_event, data: any) => {

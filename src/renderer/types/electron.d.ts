@@ -9,6 +9,19 @@ export interface ElectronAPI {
     }>;
     errors?: string[];
   }>;
+  importDualExcel: () => Promise<{
+    success: boolean;
+    week: string;
+    opFileName: string;
+    aneFileName: string;
+    data: Array<{
+      name: string;
+      workHours: string;
+      comments: string;
+    }>;
+    errors?: string[];
+    warnings?: string[];
+  }>;
   exportExcel: (data: any) => Promise<{
     success: boolean;
     filePath?: string;
