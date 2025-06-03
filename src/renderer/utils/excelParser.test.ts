@@ -125,5 +125,32 @@ describe('excelParser', () => {
       
       expect(result.week).toBe('v.24');
     });
+
+    it('should parse real Excel files from test-files directory', async () => {
+      const fs = await import('fs');
+      const path = await import('path');
+
+      // Read files as buffers
+      const opBuffer = fs.readFileSync(path.resolve(__dirname, '../../../test-files/OP_v.48.xlsx'));
+      const aneBuffer = fs.readFileSync(path.resolve(__dirname, '../../../test-files/ANE_v.48.xlsx'));
+
+      // Mock File objects
+      const opFile = {
+        name: 'OP_v.48.xlsx',
+        arrayBuffer: () => Promise.resolve(opBuffer.buffer.slice(opBuffer.byteOffset, opBuffer.byteOffset + opBuffer.byteLength))
+      } as File;
+      const aneFile = {
+        name: 'ANE_v.48.xlsx',
+        arrayBuffer: () => Promise.resolve(aneBuffer.buffer.slice(aneBuffer.byteOffset, aneBuffer.byteOffset + aneBuffer.byteLength))
+      } as File;
+
+      const result = await parseExcelFiles([opFile, aneFile]);
+
+      expect(result).toHaveProperty('week');
+      expect(result).toHaveProperty('staff');
+      expect(Array.isArray(result.staff)).toBe(true);
+      expect(result.staff.length).toBeGreaterThan(0);
+      expect(typeof result.week).toBe('string');
+    });
   });
 });

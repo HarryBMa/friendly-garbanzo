@@ -1,0 +1,26 @@
+react-dom_client.js?v=ed1dd9e7:17987 Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
+VM4 sandbox_bundle:2 Electron Security Warning (Insecure Content-Security-Policy) This renderer process has either no Content Security
+  Policy set or a policy with "unsafe-eval" enabled. This exposes users of
+  this app to unnecessary security risks.
+
+For more information and help, consult
+https://electronjs.org/docs/tutorial/security.
+This warning will not show up
+once the app is packaged.
+warnAboutInsecureCSP @ VM4 sandbox_bundle:2
+Admin.tsx:99 🎯 Admin component mounted
+Admin.tsx:100 🔧 ElectronAPI available: true
+Admin.tsx:101 📦 Store methods available: Object
+Admin.tsx:108 ⚡ ElectronAPI methods: Array(5)
+Admin.tsx:99 🎯 Admin component mounted
+Admin.tsx:100 🔧 ElectronAPI available: true
+Admin.tsx:101 📦 Store methods available: Object
+Admin.tsx:108 ⚡ ElectronAPI methods: Array(5)0: "importExcel"1: "importDualExcel"2: "exportExcel"3: "toggleFullscreen"4: "onMainProcessMessage"length: 5[[Prototype]]: Array(0)at: ƒ at()concat: ƒ concat()constructor: ƒ Array()copyWithin: ƒ copyWithin()entries: ƒ entries()every: ƒ every()fill: ƒ fill()filter: ƒ filter()find: ƒ find()findIndex: ƒ findIndex()findLast: ƒ findLast()findLastIndex: ƒ findLastIndex()flat: ƒ flat()flatMap: ƒ flatMap()forEach: ƒ forEach()includes: ƒ includes()indexOf: ƒ indexOf()join: ƒ join()keys: ƒ keys()lastIndexOf: ƒ lastIndexOf()length: 0map: ƒ map()pop: ƒ pop()push: ƒ push()reduce: ƒ reduce()reduceRight: ƒ reduceRight()reverse: ƒ reverse()shift: ƒ shift()slice: ƒ slice()some: ƒ some()sort: ƒ sort()splice: ƒ splice()toLocaleString: ƒ toLocaleString()toReversed: ƒ toReversed()toSorted: ƒ toSorted()toSpliced: ƒ toSpliced()toString: ƒ toString()unshift: ƒ unshift()values: ƒ values()with: ƒ with()Symbol(Symbol.iterator): ƒ values()Symbol(Symbol.unscopables): {at: true, copyWithin: true, entries: true, fill: true, find: true, …}[[Prototype]]: Object
+App.tsx:14 Main process message: 03/06/2025, 12:41:53
+App.tsx:14 Main process message: 03/06/2025, 12:41:53
+Admin.tsx:217 🚀 Starting dual Excel import...
+Admin.tsx:232 📞 Calling window.electronAPI.importDualExcel()...
+Admin.tsx:235 📥 Received result from electronAPI: {success: true, week: 'v.48', opFileName: 'OP_v.48.xlsx', aneFileName: 'ANE_v.48.xlsx', data: Array(0), …}
+Admin.tsx:275 ❌ Import failed or no data found
+Admin.tsx:276 📊 Result details: {success: true, dataLength: 0, errors: undefined}dataLength: 0errors: undefinedsuccess: true[[Prototype]]: Objectconstructor: ƒ Object()assign: ƒ assign()length: 2name: "assign"arguments: (...)caller: (...)[[Prototype]]: ƒ ()[[Scopes]]: Scopes[0]create: ƒ create()defineProperties: ƒ defineProperties()defineProperty: ƒ defineProperty()entries: ƒ entries()freeze: ƒ freeze()fromEntries: ƒ fromEntries()getOwnPropertyDescriptor: ƒ getOwnPropertyDescriptor()getOwnPropertyDescriptors: ƒ getOwnPropertyDescriptors()getOwnPropertyNames: ƒ getOwnPropertyNames()getOwnPropertySymbols: ƒ getOwnPropertySymbols()getPrototypeOf: ƒ getPrototypeOf()groupBy: ƒ groupBy()hasOwn: ƒ hasOwn()is: ƒ is()isExtensible: ƒ isExtensible()isFrozen: ƒ isFrozen()isSealed: ƒ isSealed()keys: ƒ keys()length: 1name: "Object"preventExtensions: ƒ preventExtensions()prototype: {__defineGetter__: ƒ, __defineSetter__: ƒ, hasOwnProperty: ƒ, __lookupGetter__: ƒ, __lookupSetter__: ƒ, …}seal: ƒ seal()setPrototypeOf: ƒ setPrototypeOf()values: ƒ values()arguments: (...)caller: (...)[[Prototype]]: ƒ ()[[Scopes]]: Scopes[0]hasOwnProperty: ƒ hasOwnProperty()isPrototypeOf: ƒ isPrototypeOf()propertyIsEnumerable: ƒ propertyIsEnumerable()toLocaleString: ƒ toLocaleString()toString: ƒ toString()valueOf: ƒ valueOf()__defineGetter__: ƒ __defineGetter__()__defineSetter__: ƒ __defineSetter__()__lookupGetter__: ƒ __lookupGetter__()__lookupSetter__: ƒ __lookupSetter__()__proto__: (...)get __proto__: ƒ __proto__()set __proto__: ƒ __proto__()
+Admin.tsx:283 ⚠️ Showing error message: Import misslyckades eller inga data hittades
