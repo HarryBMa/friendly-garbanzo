@@ -5,9 +5,7 @@ import { importStaffFromExcel, exportScheduleToExcel } from './fileHandler';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Debug: Log paths to understand the structure
-console.log('__dirname:', __dirname);
-console.log('APP_ROOT will be:', path.join(__dirname, '../..'));
+
 
 // The built directory structure
 //
@@ -18,14 +16,13 @@ console.log('APP_ROOT will be:', path.join(__dirname, '../..'));
 // │ │ ├── main.cjs
 // │ │ └── preload.cjs
 // │
-process.env.APP_ROOT = path.join(__dirname, '../..');
+process.env.APP_ROOT = path.join(__dirname, '..');
 
 export const MAIN_DIST = path.join(process.env.APP_ROOT, 'dist-electron');
 export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist');
 export const VITE_DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL;
 
-console.log('RENDERER_DIST:', RENDERER_DIST);
-console.log('Looking for index.html at:', path.join(RENDERER_DIST, 'index.html'));
+
 
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
   ? path.join(process.env.APP_ROOT, 'public')
@@ -53,9 +50,7 @@ function createWindow() {
   // Test active push message to Renderer-process.
   win.webContents.on('did-finish-load', () => {
     win?.webContents.send('main-process-message', new Date().toLocaleString());
-  });
-
-  if (VITE_DEV_SERVER_URL) {
+  });  if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL);
     win.webContents.openDevTools();
   } else {

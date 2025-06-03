@@ -394,14 +394,25 @@ export const useAppStore = create<AppState>()(
             refreshInterval: 30000
           }
         })
-    }),
-    {
+    }),    {
       name: 'or-scheduling-app-storage',
       partialize: (state) => ({
         weeks: state.weeks,
         availableStaff: state.availableStaff,
         settings: state.settings
-      })
+      }),
+      onRehydrateStorage: () => (state) => {
+        // Fix Date objects after rehydration
+        if (state?.weeks) {
+          state.weeks = state.weeks.map(week => ({
+            ...week,
+            days: week.days.map(day => ({
+              ...day,
+              date: typeof day.date === 'string' ? new Date(day.date) : day.date
+            }))
+          }));
+        }
+      }
     }
   )
 );
