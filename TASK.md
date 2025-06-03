@@ -43,6 +43,15 @@
 - ✅ Cleaned up debug logging and console errors
 - ✅ Achieved successful application build and runtime without errors
 
+### [2025-06-03] CorridorStaffGrid Restructure
+**Prompt**: Restructure CorridorStaffGrid into 3 clear blocks (OP SSK, ANE SSK, PASS) matching Excel layout
+**Outcome**: 
+- ✅ Updated `CorridorRole` interface to support functions/slots with staff assignments
+- ✅ Added `CorridorFunction` interface with lunch room badges and pager support
+- ✅ Restructured `CorridorStaffGrid.tsx` with 3-column grid layout
+- ✅ Added lunch coverage badges (🍽 room numbers) and pager display
+- ✅ Improved compact layout with proper spacing and truncation
+
 ---
 
 ## ⏳ Ongoing Tasks

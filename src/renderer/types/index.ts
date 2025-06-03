@@ -19,10 +19,23 @@ export interface OperatingRoom {
   staff: RoomStaff;
 }
 
+export interface CorridorFunction {
+  id: string;
+  label: string; // e.g. "1301", "Lunch 3704"
+  staff?: {
+    name: string;
+    workHours: string;
+    pager?: string;
+    comments?: string;
+    lunchRooms?: string[]; // ["3701", "3704"]
+  };
+}
+
 export interface CorridorRole {
   id: string;
-  name: string;
-  staff?: StaffMember;
+  name: string; // Allow any string for Swedish role names
+  functions: CorridorFunction[];
+  staff?: StaffMember; // Add optional staff assignment
 }
 
 export interface DaySchedule {

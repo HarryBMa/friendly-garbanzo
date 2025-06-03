@@ -17,10 +17,9 @@ export default function SidebarPanel({ day }: SidebarPanelProps) {
   const assignedToCorridor = day.corridorStaff.filter(role => role.staff).length;
   const unassigned = totalStaff - assignedToRooms - assignedToCorridor;
 
-  return (
-    <div className="space-y-4 text-xs">
+  return (    <div className="space-y-4 text-xs">
       {/* Date Information */}
-      <div className="bg-base-300 p-2 rounded">
+      <div className="bg-gray-200 p-2 rounded">
         <h3 className="font-semibold text-sm mb-1">{day.dayName}</h3>
         <div className="space-y-1 text-xs">
           <div>{formatDate(day.date)}</div>
@@ -29,7 +28,7 @@ export default function SidebarPanel({ day }: SidebarPanelProps) {
       </div>
 
       {/* Staff Summary */}
-      <div className="bg-base-300 p-2 rounded">
+      <div className="bg-gray-200 p-2 rounded">
         <h3 className="font-semibold text-sm mb-2">Personalöversikt</h3>
         <div className="space-y-1">
           <div className="flex justify-between">
@@ -51,10 +50,8 @@ export default function SidebarPanel({ day }: SidebarPanelProps) {
             </span>
           </div>
         </div>
-      </div>
-
-      {/* Room Status */}
-      <div className="bg-base-300 p-2 rounded">
+      </div>      {/* Room Status */}
+      <div className="bg-gray-200 p-2 rounded">
         <h3 className="font-semibold text-sm mb-2">Salstatus</h3>
         <div className="space-y-1">
           {day.rooms.map((room) => {
@@ -82,33 +79,27 @@ export default function SidebarPanel({ day }: SidebarPanelProps) {
             );
           })}
         </div>
-      </div>
-
-      {/* Corridor Status */}
-      <div className="bg-base-300 p-2 rounded">
+      </div>      {/* Corridor Status */}
+      <div className="bg-gray-200 p-2 rounded">
         <h3 className="font-semibold text-sm mb-2">Korridorstatus</h3>
         <div className="space-y-1">
           {day.corridorStaff.map((role) => (
             <div key={role.id} className="flex justify-between items-center">
-              <span className="truncate flex-1 mr-2">{role.name}:</span>
-              <span 
+              <span className="truncate flex-1 mr-2">{role.name}:</span>              <span 
                 className={`w-2 h-2 rounded-full ${
-                  role.staff ? 'bg-success' : 'bg-error'
+                  role.staff ? 'bg-green-500' : 'bg-red-500'
                 }`}
               />
             </div>
           ))}
         </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="bg-base-300 p-2 rounded">
-        <h3 className="font-semibold text-sm mb-2">Snabbåtgärder</h3>
-        <div className="space-y-1">
-          <button className="btn btn-xs btn-block">
+      </div>      {/* Quick Actions */}
+      <div className="bg-gray-200 p-2 rounded">
+        <h3 className="font-semibold text-sm mb-2">Snabbåtgärder</h3>        <div className="space-y-1">
+          <button className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 w-full">
             Kopiera schema
           </button>
-          <button className="btn btn-xs btn-block">
+          <button className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 w-full">
             Rensa dag
           </button>
         </div>

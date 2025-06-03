@@ -72,19 +72,21 @@ const createDefaultDay = (dayName: string, index: number): DaySchedule => {
         name: 'Sal 3', 
         staff: {}
       }
-    ],
-    corridorStaff: [
+    ],    corridorStaff: [
       {
         id: 'corridor-search',
-        name: 'Sök/Mottagning'
+        name: 'Sök/Mottagning',
+        functions: []
       },
       {
         id: 'corridor-responsibility',
-        name: 'Korridorsansvar'
+        name: 'Korridorsansvar',
+        functions: []
       },
       {
         id: 'corridor-standby',
-        name: 'Beredskapsstråk'
+        name: 'Beredskapsstråk',
+        functions: []
       }
     ],
     availableStaff: []
@@ -134,6 +136,7 @@ export const useAppStore = create<AppState>()(
         })),
 
       // Staff management
+
       addStaff: (staff: StaffMember) =>
         set((state) => ({
           availableStaff: [...state.availableStaff, staff]

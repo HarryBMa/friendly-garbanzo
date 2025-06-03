@@ -37,18 +37,17 @@ function DraggableStaffCard({ staff }: { staff: StaffMember }) {
   };
 
   return (
-    <div
-      ref={setNodeRef}
+    <div      ref={setNodeRef}
       style={style}
       {...attributes}
       {...listeners}
-      className="card bg-base-100 shadow-sm cursor-move hover:shadow-md transition-shadow"
+      className="bg-white shadow-sm cursor-move hover:shadow-md transition-shadow rounded-lg border border-gray-200"
     >
-      <div className="card-body p-3">
+      <div className="p-3">
         <h3 className="font-semibold text-sm">{staff.name}</h3>
-        <p className="text-xs text-base-content/70">{staff.workHours}</p>
+        <p className="text-xs text-gray-600">{staff.workHours}</p>
         {staff.comments && (
-          <p className="text-xs text-base-content/60 italic">
+          <p className="text-xs text-gray-500 italic">
             {staff.comments}
           </p>
         )}
@@ -70,11 +69,10 @@ function DroppableZone({
   const { isOver, setNodeRef } = useDroppable({
     id,
   });
-
   return (
     <div 
       ref={setNodeRef}
-      className={`${className} ${isOver ? 'bg-primary/10 border-primary border-2' : 'border-2 border-dashed border-base-300'} transition-colors rounded min-h-[60px]`}
+      className={`${className} ${isOver ? 'bg-blue-50 border-blue-400 border-2' : 'border-2 border-dashed border-gray-300'} transition-colors rounded min-h-[60px]`}
     >
       {children}
     </div>
@@ -197,19 +195,19 @@ export default function Admin() {
       collisionDetection={closestCenter}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
-    >
-      <div className="min-h-screen bg-base-100">
+    >      <div className="min-h-screen bg-white">
         {/* Header */}
-        <div className="navbar bg-primary text-primary-content">
-          <div className="flex-1">
+        <div className="bg-blue-600 text-white px-4 py-3">
+          <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold">{sv.appTitle} - {sv.planning}</h1>
-          </div>
-          <div className="flex-none gap-2">
-            <button 
-              className="btn btn-secondary btn-sm"
-              onClick={toggleDashboardMode}            >
-              {sv.dashboardView}
-            </button>
+            <div className="flex gap-2">
+              <button 
+                className="px-3 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors text-sm"
+                onClick={toggleDashboardMode}
+              >
+                {sv.dashboardView}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -219,8 +217,7 @@ export default function Admin() {
         <div className="mb-4">
           <div className="breadcrumbs text-sm">
             <ul>
-              <li>
-                <select className="select select-bordered select-sm max-w-xs">
+              <li>                <select className="px-3 py-1 border border-gray-300 rounded text-sm bg-white max-w-xs">
                   <option value={currentWeekId}>
                     {currentWeek?.name || 'Aktuell vecka'}
                   </option>
@@ -246,25 +243,24 @@ export default function Admin() {
         {/* Current Day Content */}
         {currentDay && (
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Available Staff Panel */}
-            <div className="lg:col-span-1">
-              <div className="card bg-base-200 shadow-sm">
-                <div className="card-body p-4">
-                  <h2 className="card-title text-lg">{sv.staff.available}</h2>
+            {/* Available Staff Panel */}          <div className="lg:col-span-1">
+              <div className="bg-white shadow-sm rounded-lg border border-gray-200">
+                <div className="p-4">
+                  <h2 className="text-lg font-semibold">{sv.staff.available}</h2>
                     {/* Import/Add Controls */}                  <div className="flex gap-2 mb-4">
                     <button 
-                      className="btn btn-primary btn-sm flex-1"
+                      className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 flex-1"
                       onClick={handleImportExcel}
                     >
                       {sv.actions.import}
                     </button>
                     <button 
-                      className="btn btn-secondary btn-sm flex-1"
+                      className="px-3 py-1.5 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 flex-1"
                       onClick={handleExportExcel}
                     >
                       {sv.actions.export}
                     </button>
-                    <button className="btn btn-outline btn-sm">
+                    <button className="px-3 py-1.5 border border-gray-300 text-gray-700 text-sm rounded hover:bg-gray-50">
                       {sv.actions.add}
                     </button>
                   </div>{/* Staff List */}
@@ -274,7 +270,7 @@ export default function Admin() {
                   >
                     <div className="space-y-2 max-h-96 overflow-y-auto">
                       {currentDay.availableStaff.length === 0 ? (
-                        <div className="text-center text-base-content/60 py-8">
+                        <div className="text-center text-gray-500 py-8">
                           {sv.messages.noStaffAvailable}
                         </div>
                       ) : (
@@ -288,79 +284,72 @@ export default function Admin() {
               </div>
             </div>
 
-            {/* Operating Rooms */}
-            <div className="lg:col-span-2">
-              <div className="card bg-base-200 shadow-sm">
-                <div className="card-body p-4">
-                  <h2 className="card-title text-lg">{sv.rooms.operatingRoom}</h2>
+            {/* Operating Rooms */}          <div className="lg:col-span-2">
+              <div className="bg-white shadow-sm rounded-lg border border-gray-200">
+                <div className="p-4">
+                  <h2 className="text-lg font-semibold">{sv.rooms.operatingRoom}</h2>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                     {currentDay.rooms.map((room) => (
-                      <div key={room.id} className="card bg-base-100 shadow-sm">
-                        <div className="card-body p-3">
-                          <h3 className="card-title text-base">{room.name}</h3>
+                      <div key={room.id} className="bg-white shadow-sm rounded-lg border border-gray-200">
+                        <div className="p-3">
+                          <h3 className="text-base font-semibold">{room.name}</h3>
                           
                           {/* Role Slots */}
-                          <div className="space-y-2">                            {/* Pass */}
-                            <DroppableZone id={`room-${room.id.split('-')[1]}-pass`}>
-                              <div className="text-xs font-semibold text-base-content/70 mb-1 p-2">
+                          <div className="space-y-2">                            {/* Pass */}                            <DroppableZone id={`room-${room.id.split('-')[1]}-pass`}>
+                              <div className="text-xs font-semibold text-gray-600 mb-1 p-2">
                                 {sv.staff.pass}
                               </div>
                               {room.staff.pass ? (
                                 <div className="bg-info text-info-content p-2 rounded text-xs m-2">
                                   <div className="font-semibold">{room.staff.pass.name}</div>
-                                  <div className="text-xs opacity-80">{room.staff.pass.workHours}</div>
-                                  <button 
+                                  <div className="text-xs opacity-80">{room.staff.pass.workHours}</div>                                  <button 
                                     onClick={() => unassignStaff(room.staff.pass!.id)}
-                                    className="btn btn-xs btn-circle float-right mt-1"
+                                    className="w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center hover:bg-red-600 float-right mt-1"
                                   >
                                     ×
                                   </button>
                                 </div>
-                              ) : (
-                                <div className="text-center text-base-content/40 text-xs py-2">
+                              ) : (                                <div className="text-center text-gray-400 text-xs py-2">
                                   Dra personal hit
                                 </div>
                               )}
                             </DroppableZone>                            {/* Op SSK */}
                             <DroppableZone id={`room-${room.id.split('-')[1]}-opSSK`}>
-                              <div className="text-xs font-semibold text-base-content/70 mb-1 p-2">
+                              <div className="text-xs font-semibold text-gray-600 mb-1 p-2">
                                 {sv.staff.opSSK}
                               </div>
                               {room.staff.opSSK ? (
                                 <div className="bg-success text-success-content p-2 rounded text-xs m-2">
                                   <div className="font-semibold">{room.staff.opSSK.name}</div>
-                                  <div className="text-xs opacity-80">{room.staff.opSSK.workHours}</div>
-                                  <button 
+                                  <div className="text-xs opacity-80">{room.staff.opSSK.workHours}</div>                                  <button 
                                     onClick={() => unassignStaff(room.staff.opSSK!.id)}
-                                    className="btn btn-xs btn-circle float-right mt-1"
+                                    className="w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center hover:bg-red-600 float-right mt-1"
                                   >
                                     ×
                                   </button>
                                 </div>
-                              ) : (
-                                <div className="text-center text-base-content/40 text-xs py-2">
+                              ) : (                                <div className="text-center text-gray-400 text-xs py-2">
                                   Dra personal hit
                                 </div>
                               )}
                             </DroppableZone>                            {/* Ane SSK */}
                             <DroppableZone id={`room-${room.id.split('-')[1]}-aneSSK`}>
-                              <div className="text-xs font-semibold text-base-content/70 mb-1 p-2">
+                              <div className="text-xs font-semibold text-gray-600 mb-1 p-2">
                                 {sv.staff.aneSSK}
                               </div>
                               {room.staff.aneSSK ? (
                                 <div className="bg-warning text-warning-content p-2 rounded text-xs m-2">
                                   <div className="font-semibold">{room.staff.aneSSK.name}</div>
-                                  <div className="text-xs opacity-80">{room.staff.aneSSK.workHours}</div>
-                                  <button 
+                                  <div className="text-xs opacity-80">{room.staff.aneSSK.workHours}</div>                                  <button 
                                     onClick={() => unassignStaff(room.staff.aneSSK!.id)}
-                                    className="btn btn-xs btn-circle float-right mt-1"
+                                    className="w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center hover:bg-red-600 float-right mt-1"
                                   >
                                     ×
                                   </button>
                                 </div>
                               ) : (
-                                <div className="text-center text-base-content/40 text-xs py-2">
+                                <div className="text-center text-gray-400 text-xs py-2">
                                   Dra personal hit
                                 </div>
                               )}
@@ -372,32 +361,29 @@ export default function Admin() {
                   </div>
                 </div>
               </div>
-            </div>
-
-            {/* Corridor Staff */}
+            </div>            {/* Corridor Staff */}
             <div className="lg:col-span-1">
-              <div className="card bg-base-200 shadow-sm">
-                <div className="card-body p-4">
-                  <h2 className="card-title text-lg">{sv.staff.corridor}</h2>
-                    <div className="space-y-3">
-                    {currentDay.corridorStaff.map((role) => (
+              <div className="bg-white shadow-sm rounded-lg border border-gray-200">
+                <div className="p-4">
+                  <h2 className="text-lg font-semibold">{sv.staff.corridor}</h2>
+                    <div className="space-y-3">                    {currentDay.corridorStaff.map((role) => (
                       <DroppableZone key={role.id} id={`corridor-${role.id}`}>
-                        <div className="text-sm font-semibold text-base-content/70 mb-2 p-2">
+                        <div className="text-sm font-semibold text-gray-600 mb-2 p-2">
                           {role.name}
                         </div>
-                        {role.staff ? (
-                          <div className="bg-accent text-accent-content p-2 rounded text-xs m-2">
-                            <div className="font-semibold">{role.staff.name}</div>
-                            <div className="text-xs opacity-80">{role.staff.workHours}</div>
+                        {role.functions.length > 0 && role.functions[0].staff ? (
+                          <div className="bg-purple-100 text-purple-800 p-2 rounded text-xs m-2">
+                            <div className="font-semibold">{role.functions[0].staff.name}</div>
+                            <div className="text-xs opacity-80">{role.functions[0].staff.workHours}</div>
                             <button 
-                              onClick={() => unassignStaff(role.staff!.id)}
-                              className="btn btn-xs btn-circle float-right mt-1"
+                              onClick={() => {/* TODO: Implement unassign functionality */}}
+                              className="px-1 py-1 text-xs bg-red-500 text-white rounded-full float-right mt-1 w-5 h-5 flex items-center justify-center"
                             >
                               ×
                             </button>
                           </div>
                         ) : (
-                          <div className="text-center text-base-content/40 text-xs py-3">
+                          <div className="text-center text-gray-400 text-xs py-3">
                             Dra personal hit
                           </div>
                         )}
@@ -412,11 +398,10 @@ export default function Admin() {
     </div>
       
     <DragOverlay>
-      {activeStaff ? (
-        <div className="card bg-base-100 shadow-lg cursor-move rotate-3 opacity-90">
-          <div className="card-body p-3">
+      {activeStaff ? (        <div className="bg-white shadow-lg rounded-lg border border-gray-200 cursor-move rotate-3 opacity-90">
+          <div className="p-3">
             <h3 className="font-semibold text-sm">{activeStaff.name}</h3>
-            <p className="text-xs text-base-content/70">{activeStaff.workHours}</p>
+            <p className="text-xs text-gray-600">{activeStaff.workHours}</p>
           </div>
         </div>
       ) : null}

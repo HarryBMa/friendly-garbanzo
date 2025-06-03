@@ -81,16 +81,14 @@ export default function Dashboard() {
   const handleExitDashboard = () => {
     setDashboardMode(false);
   };
-
   if (!currentDay || !currentWeek) {
     return (
-      <div className="min-h-screen bg-base-300 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-base-content mb-4">
-            {sv.dashboard.noSchedule}
-          </h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">
+            {sv.dashboard.noSchedule}</h1>
           <button 
-            className="btn btn-primary"
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
             onClick={handleExitDashboard}
           >
             Tillbaka till planering
@@ -99,11 +97,10 @@ export default function Dashboard() {
       </div>
     );
   }
-
   return (
-    <div className="min-h-screen bg-base-300">
+    <div className="min-h-screen bg-gray-100">
       {/* Dashboard Header */}
-      <div className="bg-primary text-primary-content px-4 py-2">
+      <div className="bg-blue-600 text-white px-4 py-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-bold">
@@ -115,15 +112,14 @@ export default function Dashboard() {
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Day Navigation */}
-            <div className="flex gap-1">
+            {/* Day Navigation */}            <div className="flex gap-1">
               {currentWeek.days.map((day) => (
                 <button
                   key={day.id}
-                  className={`btn btn-xs ${
+                  className={`px-2 py-1 text-xs rounded transition-colors ${
                     currentDayId === day.id 
-                      ? 'btn-secondary' 
-                      : 'btn-ghost text-primary-content'
+                      ? 'bg-purple-600 text-white' 
+                      : 'bg-transparent text-white hover:bg-white/20'
                   }`}
                   onClick={() => handleDaySwitch(day.id)}
                 >
@@ -135,18 +131,16 @@ export default function Dashboard() {
             {/* Status and Controls */}
             <div className="text-xs opacity-75">
               {sv.dashboard.lastUpdated}: {formatTime(lastUpdated)}
-            </div>
-
-            <div className="flex gap-2">
+            </div>            <div className="flex gap-2">
               <button 
-                className="btn btn-xs btn-ghost text-primary-content"
+                className="px-2 py-1 text-xs bg-transparent text-white hover:bg-white/20 rounded transition-colors"
                 onClick={toggleFullscreen}
                 title={sv.dashboard.fullscreen}
               >
                 ⛶
               </button>
               <button 
-                className="btn btn-xs btn-ghost text-primary-content"
+                className="px-2 py-1 text-xs bg-transparent text-white hover:bg-white/20 rounded transition-colors"
                 onClick={handleExitDashboard}
                 title="Tillbaka till planering"
               >
@@ -160,10 +154,8 @@ export default function Dashboard() {
       {/* Dashboard Content */}
       <div className="p-2">
         <DashboardLayout day={currentDay} />
-      </div>
-
-      {/* Footer with keyboard shortcuts */}
-      <div className="fixed bottom-0 left-0 right-0 bg-base-300/90 text-base-content/60 text-xs p-2">
+      </div>      {/* Footer with keyboard shortcuts */}
+      <div className="fixed bottom-0 left-0 right-0 bg-gray-900/90 text-gray-400 text-xs p-2">
         <div className="container mx-auto flex justify-between items-center">
           <div>
             ← → Växla dag • ESC Planering • F11 Helskärm

@@ -8,30 +8,29 @@ interface RoomCardProps {
 
 export default function RoomCard({ room, isCompact = false }: RoomCardProps) {
   const cardClass = isCompact 
-    ? "bg-base-200 shadow-sm rounded-md p-1 min-h-0"
-    : "bg-base-200 shadow-sm rounded-md p-2 h-full";
+    ? "bg-gray-50 shadow-sm rounded-md p-1 min-h-0 border border-gray-200"
+    : "bg-gray-50 shadow-sm rounded-md p-2 h-full border border-gray-200";
 
-  const textSize = isCompact ? "text-xs" : "text-sm";
-  const titleSize = isCompact ? "text-sm" : "text-base";
+  const textSize = isCompact ? "text-[11px]" : "text-sm";
+  const titleSize = isCompact ? "text-xs" : "text-base";
 
   return (
     <div className={cardClass}>
       {/* Room Header */}
-      <div className="mb-2">
-        <h3 className={`font-semibold text-base-content ${titleSize}`}>
+      <div className={isCompact ? "mb-1" : "mb-2"}>
+        <h3 className={`font-semibold text-gray-900 ${titleSize} leading-tight truncate`}>
           {room.name}
         </h3>
       </div>
 
       {/* Staff Roles */}
-      <div className="space-y-1 flex-1">
-        {/* Pass */}
+      <div className={`${isCompact ? 'space-y-0.5' : 'space-y-1'} flex-1`}>        {/* Pass */}
         <div className="min-h-0">
-          <div className={`text-base-content/70 font-medium ${textSize} mb-1`}>
+          <div className={`text-gray-600 font-medium ${textSize} ${isCompact ? 'mb-0.5' : 'mb-1'}`}>
             {sv.staff.pass}
           </div>
           {room.staff.pass ? (
-            <div className="bg-info text-info-content p-1 rounded">
+            <div className={`bg-blue-100 text-blue-800 rounded ${isCompact ? 'p-0.5' : 'p-1'}`}>
               <div className={`font-semibold ${textSize} leading-tight truncate`}>
                 {room.staff.pass.name}
               </div>
@@ -40,7 +39,7 @@ export default function RoomCard({ room, isCompact = false }: RoomCardProps) {
               </div>
             </div>
           ) : (
-            <div className={`text-center text-base-content/40 ${isCompact ? 'text-[10px]' : 'text-xs'} py-1`}>
+            <div className={`text-center text-gray-400 ${isCompact ? 'text-[10px]' : 'text-xs'} py-1`}>
               —
             </div>
           )}
@@ -48,11 +47,11 @@ export default function RoomCard({ room, isCompact = false }: RoomCardProps) {
 
         {/* Op SSK */}
         <div className="min-h-0">
-          <div className={`text-base-content/70 font-medium ${textSize} mb-1`}>
+          <div className={`text-gray-600 font-medium ${textSize} ${isCompact ? 'mb-0.5' : 'mb-1'}`}>
             {sv.staff.opSSK}
           </div>
           {room.staff.opSSK ? (
-            <div className="bg-success text-success-content p-1 rounded">
+            <div className={`bg-green-100 text-green-800 rounded ${isCompact ? 'p-0.5' : 'p-1'}`}>
               <div className={`font-semibold ${textSize} leading-tight truncate`}>
                 {room.staff.opSSK.name}
               </div>
@@ -61,7 +60,7 @@ export default function RoomCard({ room, isCompact = false }: RoomCardProps) {
               </div>
             </div>
           ) : (
-            <div className={`text-center text-base-content/40 ${isCompact ? 'text-[10px]' : 'text-xs'} py-1`}>
+            <div className={`text-center text-gray-400 ${isCompact ? 'text-[10px]' : 'text-xs'} py-1`}>
               —
             </div>
           )}
@@ -69,11 +68,11 @@ export default function RoomCard({ room, isCompact = false }: RoomCardProps) {
 
         {/* Ane SSK */}
         <div className="min-h-0">
-          <div className={`text-base-content/70 font-medium ${textSize} mb-1`}>
+          <div className={`text-gray-600 font-medium ${textSize} ${isCompact ? 'mb-0.5' : 'mb-1'}`}>
             {sv.staff.aneSSK}
           </div>
           {room.staff.aneSSK ? (
-            <div className="bg-warning text-warning-content p-1 rounded">
+            <div className={`bg-yellow-100 text-yellow-800 rounded ${isCompact ? 'p-0.5' : 'p-1'}`}>
               <div className={`font-semibold ${textSize} leading-tight truncate`}>
                 {room.staff.aneSSK.name}
               </div>
@@ -82,7 +81,7 @@ export default function RoomCard({ room, isCompact = false }: RoomCardProps) {
               </div>
             </div>
           ) : (
-            <div className={`text-center text-base-content/40 ${isCompact ? 'text-[10px]' : 'text-xs'} py-1`}>
+            <div className={`text-center text-gray-400 ${isCompact ? 'text-[10px]' : 'text-xs'} py-1`}>
               —
             </div>
           )}
@@ -91,12 +90,12 @@ export default function RoomCard({ room, isCompact = false }: RoomCardProps) {
         {/* Students (if any) */}
         {room.staff.students && room.staff.students.length > 0 && (
           <div className="min-h-0">
-            <div className={`text-base-content/70 font-medium ${textSize} mb-1`}>
+            <div className={`text-gray-600 font-medium ${textSize} ${isCompact ? 'mb-0.5' : 'mb-1'}`}>
               {sv.staff.student}
             </div>
-            <div className="space-y-1">
+            <div className={isCompact ? 'space-y-0.5' : 'space-y-1'}>
               {room.staff.students.map((student) => (
-                <div key={student.id} className="bg-neutral text-neutral-content p-1 rounded">
+                <div key={student.id} className={`bg-gray-100 text-gray-800 rounded ${isCompact ? 'p-0.5' : 'p-1'}`}>
                   <div className={`font-semibold ${textSize} leading-tight truncate`}>
                     {student.name}
                   </div>
@@ -109,5 +108,6 @@ export default function RoomCard({ room, isCompact = false }: RoomCardProps) {
           </div>
         )}
       </div>
-    </div>  );
+    </div>
+  );
 }

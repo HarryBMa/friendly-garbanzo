@@ -10,7 +10,6 @@ Build a Swedish Operating Room Staff Scheduling desktop application that runs as
 - **Build Tool**: Vite
 - **Frontend**: React 18+ with TypeScript
 - **Styling**: Tailwind CSS 4.1+ (CSS-only config)
-- **UI Components**: daisyui
 - **Drag & Drop**: @dnd-kit/core, @dnd-kit/sortable
 - **Excel Processing**: ExcelJS (modern replacement for xlsx)
 - **State Management**: Zustand
@@ -144,7 +143,7 @@ src/
 
 ## Next Steps
 1. Set up basic Electron + Vite + React project structure
-2. Configure Tailwind CSS 4.1 with daisyui
+2. Configure Tailwind CSS 4.1 for custom styling
 3. Create core TypeScript types and interfaces
 4. Implement Excel import functionality
 5. Build drag & drop planning interface

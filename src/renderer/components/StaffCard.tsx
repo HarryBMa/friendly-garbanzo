@@ -16,34 +16,32 @@ export default function StaffCard({
   showActions = false,
   onEdit,
   onRemove 
-}: StaffCardProps) {
-  const cardClass = `
-    bg-base-100 shadow-sm rounded cursor-move transition-all
+}: StaffCardProps) {  const cardClass = `
+    bg-white shadow-sm rounded cursor-move transition-all border border-gray-200
     ${isDragging ? 'opacity-50 scale-95' : 'hover:shadow-md'}
-    ${isCompact ? 'p-2' : 'p-3'}
+    ${isCompact ? 'p-1' : 'p-3'}
   `;
 
-  const textSize = isCompact ? 'text-xs' : 'text-sm';
-  const nameSize = isCompact ? 'text-sm' : 'text-base';
+  const textSize = isCompact ? 'text-[11px]' : 'text-sm';
+  const nameSize = isCompact ? 'text-xs' : 'text-base';
 
   return (
     <div className={cardClass} draggable>
       {/* Staff Name */}
       <div className="flex items-start justify-between">
-        <h3 className={`font-semibold text-base-content ${nameSize} leading-tight`}>
+        <h3 className={`font-semibold text-gray-900 ${nameSize} leading-tight truncate`}>
           {staff.name}
         </h3>
-        
-        {showActions && (
-          <div className="dropdown dropdown-end">
-            <div tabIndex={0} role="button" className="btn btn-ghost btn-xs">
+          {showActions && (
+          <div className="relative">
+            <div tabIndex={0} role="button" className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors">
               ⋮
             </div>
-            <ul tabIndex={0} className="dropdown-content menu bg-base-100 rounded-box z-[1] w-32 p-2 shadow">
+            <ul tabIndex={0} className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 z-10 w-32 p-2 hidden focus-within:block hover:block">
               {onEdit && (
                 <li>
                   <button 
-                    className="text-xs"
+                    className="text-xs w-full text-left px-2 py-1 hover:bg-gray-100 rounded"
                     onClick={() => onEdit(staff)}
                   >
                     Redigera
@@ -53,7 +51,7 @@ export default function StaffCard({
               {onRemove && (
                 <li>
                   <button 
-                    className="text-xs text-error"
+                    className="text-xs w-full text-left px-2 py-1 hover:bg-gray-100 rounded text-red-600"
                     onClick={() => onRemove(staff.id)}
                   >
                     Ta bort
@@ -63,26 +61,24 @@ export default function StaffCard({
             </ul>
           </div>
         )}
-      </div>
-
-      {/* Work Hours */}
+      </div>      {/* Work Hours */}
       {staff.workHours && (
-        <div className={`text-base-content/70 ${textSize} mt-1`}>
+        <div className={`text-gray-600 ${textSize} ${isCompact ? 'mt-0.5' : 'mt-1'}`}>
           {staff.workHours}
         </div>
       )}
 
       {/* Comments */}
       {staff.comments && (
-        <div className={`text-base-content/60 italic ${isCompact ? 'text-[10px]' : 'text-xs'} mt-1 line-clamp-2`}>
+        <div className={`text-gray-500 italic ${isCompact ? 'text-[10px] mt-0.5' : 'text-xs mt-1'} line-clamp-2`}>
           {staff.comments}
         </div>
       )}
 
       {/* Custom staff indicator */}
       {staff.isCustom && (
-        <div className="mt-2">
-          <span className="badge badge-sm badge-outline">
+        <div className={isCompact ? 'mt-1' : 'mt-2'}>
+          <span className={`inline-block px-2 py-1 text-xs border border-gray-300 rounded-full ${isCompact ? 'text-[10px] px-1' : ''}`}>
             Manuell
           </span>
         </div>
