@@ -83,7 +83,6 @@
 - [ ] Add application icon to resolve minor warning (non-critical)
 - [ ] Final testing and UI polish
 - [ ] Documentation updates for deployment
-- [ ] imported staffcards imports all entries to "Måndag" tab in admin view. They should be sorted into correct days for planning.
 
 ### [2025-06-03] Excel Import Testing  
 **Prompt**: Test Excel import functionality with user-provided document
@@ -145,6 +144,20 @@
 
 ## 🚧 Current Tasks
 
+### [2025-06-03] Single File Upload Fix
+**Prompt**: Fix single file upload functionality that doesn't work with OP/ANE format files
+**Status**: ✅ **COMPLETED** - Updated single file import to support structured parsing
+
+**Root Cause**: The `importStaffFromExcel` function was only handling simple 3-column Excel format (Name, Work hours, Comments), but the actual OP and ANE files use a complex schedule format that requires structured parsing.
+
+**Resolution**: 
+- ✅ Updated `importStaffFromExcel` function to try structured parsing first (using `readExcelFile` helper)
+- ✅ Added fallback to simple format parsing for backward compatibility
+- ✅ Enhanced logging to show which parsing method was successful
+- ✅ Maintains compatibility with both formats: structured OP/ANE files and simple 3-column files
+
+**Result**: Single file upload now works with both OP and ANE files individually, using the same structured parsing logic as the dual import feature.
+
 ### [2025-06-03] Excel Import Production Debugging
 **Prompt**: Debug Excel import functionality showing "failed error" in live application despite passing unit tests
 **Status**: ✅ **COMPLETED** - Root cause identified and fixed
@@ -174,3 +187,32 @@
 ### [2025-06-03] Excel Parser Rewrite  
 **Prompt**: Rewrite excelParser.ts to handle direct Excel file parsing with ExcelJS for dual OP/ANE files
 **Status**: ✅ **COMPLETED** - Updated parser structure with new interfaces, all tests passing
+
+### [2025-06-03] Excel Import & Staff Organization Fixes
+**Prompt**: Fix duplicate detection in dual Excel import and staff not sorting into weekdays
+**Outcome**: 
+- ✅ Fixed Excel fileHandler.ts to properly append weekday to staff names for sorting
+- ✅ Improved duplicate detection logic to only flag true duplicates (same person, same day, both files)
+- ✅ Updated staff parsing to create properly formatted names with `(weekday)` suffix
+- ✅ Application successfully builds and runs with Excel import functionality
+
+### [2025-06-03] Staff Weekday Sorting Fix
+**Prompt**: Fix imported staff cards appearing in "Måndag" tab instead of correct weekdays for planning
+**Status**: ✅ **COMPLETED** - Root cause identified and fixed
+
+**Root Cause**: Excel headers contain abbreviated Swedish weekdays ("Mån", "Tis", "Ons") but the app store filtering logic expects full Swedish day names ("Måndag", "Tisdag", "Onsdag"). This caused all staff to be filtered into the default "Måndag" tab.
+
+**Resolution**: 
+- ✅ Added `convertToFullSwedishDay()` function to `fileHandler.ts` with proper abbreviation-to-full-name mapping
+- ✅ Modified staff name formatting in `readExcelFile()` to use full Swedish day names for proper sorting
+- ✅ Verified fix maintains compatibility with dual import system which already handled this correctly
+- ✅ All tests passing (46/46) confirming fix doesn't break existing functionality
+- ✅ Application builds and runs successfully with weekday sorting fix
+
+**Key Technical Fix**: 
+```typescript
+// Before: name: `${nameValue} (${weekday})`  // "Mån", "Tis" - doesn't match app store filter
+// After: name: `${nameValue} (${convertToFullSwedishDay(weekday)})`  // "Måndag", "Tisdag" - matches filter
+```
+
+**Result**: Staff imported from Excel files are now properly distributed across all weekday tabs in the planning interface, enabling correct scheduling workflow.

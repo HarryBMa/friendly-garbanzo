@@ -40,9 +40,9 @@ interface AppState {
   
   // Staff assignment
   assignStaffToRoom: (staffId: string, roomId: string, role: string) => void;
-  assignStaffToCorridor: (staffId: string, corridorRoleId: string) => void;
-  unassignStaff: (staffId: string) => void;
+  assignStaffToCorridor: (staffId: string, corridorRoleId: string) => void;  unassignStaff: (staffId: string) => void;
   moveStaffToAvailable: (staffId: string) => void;
+  clearAvailableStaff: () => void;
   
   // Utility
   getCurrentDay: () => DaySchedule | undefined;
@@ -151,23 +151,33 @@ export const useAppStore = create<AppState>()(
 
       updateStaff: (staffId: string, updates: Partial<StaffMember>) =>
         set((state) => ({
-          availableStaff: state.availableStaff.map(s => 
+          // Update global availableStaff (if used anywhere)
+          availableStaff: state.availableStaff.map(s =>
             s.id === staffId ? { ...s, ...updates } : s
-          )
+          ),
+          // Update all days' availableStaff
+          weeks: state.weeks.map(week => ({
+            ...week,
+            days: week.days.map(day => ({
+              ...day,
+              availableStaff: day.availableStaff.map(s =>
+                s.id === staffId ? { ...s, ...updates } : s
+              )
+            }))
+          }))
         })),      importStaff: (staffList: StaffMember[]) =>
   set((state) => ({
     weeks: state.weeks.map(week =>
       week.id === state.currentWeekId
         ? {
             ...week,
-            days: week.days.map(day =>
-              day.id === state.currentDayId
-                ? {
-                    ...day,
-                    availableStaff: [...day.availableStaff, ...staffList]
-                  }
-                : day
-            )
+            days: week.days.map(day => ({
+              ...day,
+              availableStaff: [
+                ...day.availableStaff,
+                ...staffList.filter(staff => staff.name.endsWith(`(${day.dayName})`))
+              ]
+            }))
           }
         : week
     )
@@ -180,14 +190,13 @@ importDualStaff: (staffList: StaffMember[], weekInfo: { week: string; opFileName
         ? {
             ...week,
             name: `${weekInfo.week} (${weekInfo.opFileName} + ${weekInfo.aneFileName})`,
-            days: week.days.map(day =>
-              day.id === state.currentDayId
-                ? {
-                    ...day,
-                    availableStaff: [...day.availableStaff, ...staffList]
-                  }
-                : day
-            )
+            days: week.days.map(day => ({
+              ...day,
+              availableStaff: [
+                ...day.availableStaff,
+                ...staffList.filter(staff => staff.name.endsWith(`(${day.dayName})`))
+              ]
+            }))
           }
         : week
     )
@@ -209,14 +218,13 @@ importDualStaff: (staffList: StaffMember[], weekInfo: { week: string; opFileName
           ? {
               ...week,
               name: `${parseResult.week} (Structured Import)`,
-              days: week.days.map(day =>
-                day.id === state.currentDayId
-                  ? {
-                      ...day,
-                      availableStaff: [...day.availableStaff, ...staffMembers]
-                    }
-                  : day
-              )
+              days: week.days.map(day => ({
+                ...day,
+                availableStaff: [
+                  ...day.availableStaff,
+                  ...staffMembers.filter(staff => staff.name.endsWith(`(${day.dayName})`))
+                ]
+              }))
             }
           : week
       )
@@ -449,6 +457,22 @@ importDualStaff: (staffList: StaffMember[], weekInfo: { week: string; opFileName
         // This is just an alias for unassignStaff for clarity
         get().unassignStaff(staffId);
       },
+
+      clearAvailableStaff: () => 
+        set((state) => ({
+          weeks: state.weeks.map(week =>
+            week.id === state.currentWeekId
+              ? {
+                  ...week,
+                  days: week.days.map(day =>
+                    day.id === state.currentDayId
+                      ? { ...day, availableStaff: [] }
+                      : day
+                  )
+                }
+              : week
+          )
+        })),
 
       // Utility
       getCurrentDay: () => {

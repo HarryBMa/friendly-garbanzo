@@ -7,12 +7,11 @@ import {
 } from './staffConverter';
 import type { ParsedStaff } from '../types';
 
-describe('staffConverter', () => {
-  const mockParsedStaff: ParsedStaff[] = [
+describe('staffConverter', () => {  const mockParsedStaff: ParsedStaff[] = [
     {
       name: 'Anna Andersson',
       role: 'op_ssk',
-      weekday: 'Måndag',
+      weekday: 'Mån',
       date: '2024-11-25',
       workHours: '08:00-16:00',
       comments: 'Normal shift',
@@ -21,7 +20,7 @@ describe('staffConverter', () => {
     {
       name: 'Björn Bergström',
       role: 'ane_ssk',
-      weekday: 'Måndag',
+      weekday: 'Mån',
       date: '2024-11-25',
       workHours: '06:00-14:00',
       comments: 'Early shift',
@@ -31,7 +30,7 @@ describe('staffConverter', () => {
     {
       name: 'Anna Andersson',
       role: 'op_usk',
-      weekday: 'Tisdag',
+      weekday: 'Tis',
       date: '2024-11-26',
       workHours: '14:00-22:00',
       sourceFile: 'op'
@@ -43,8 +42,7 @@ describe('staffConverter', () => {
       const result = convertParsedStaffToMembers(mockParsedStaff);
       
       expect(result).toHaveLength(3);
-      
-      // Check Anna Andersson Monday entry
+        // Check Anna Andersson Monday entry
       const annaMonday = result.find(s => s.name.includes('Anna') && s.name.includes('Måndag'));
       expect(annaMonday).toBeDefined();
       expect(annaMonday!.workHours).toBe('08:00-16:00');
@@ -68,11 +66,10 @@ describe('staffConverter', () => {
       expect(annaTuesday!.comments).toBe('[OP] USK');
     });
 
-    it('should handle staff member with no work hours or comments', () => {
-      const minimalStaff: ParsedStaff[] = [{
+    it('should handle staff member with no work hours or comments', () => {      const minimalStaff: ParsedStaff[] = [{
         name: 'Test Person',
         role: 'op_ssk',
-        weekday: 'Onsdag',
+        weekday: 'Ons',
         date: '2024-11-27',
         sourceFile: 'op'
       }];
@@ -85,12 +82,11 @@ describe('staffConverter', () => {
       expect(result[0].comments).toBe('[OP] SSK');
     });
 
-    it('should combine duplicate entries for same person same day', () => {
-      const duplicateStaff: ParsedStaff[] = [
+    it('should combine duplicate entries for same person same day', () => {      const duplicateStaff: ParsedStaff[] = [
         {
           name: 'Test Person',
           role: 'op_ssk',
-          weekday: 'Måndag',
+          weekday: 'Mån',
           date: '2024-11-25',
           workHours: '08:00-16:00',
           comments: 'OP comment',
@@ -99,7 +95,7 @@ describe('staffConverter', () => {
         {
           name: 'Test Person',
           role: 'ane_ssk',
-          weekday: 'Måndag',
+          weekday: 'Mån',
           date: '2024-11-25',
           workHours: '06:00-14:00',
           comments: 'ANE comment',
@@ -117,17 +113,16 @@ describe('staffConverter', () => {
     });
   });
 
-  describe('groupParsedStaffByWeekday', () => {
-    it('should group staff by weekday correctly', () => {
+  describe('groupParsedStaffByWeekday', () => {    it('should group staff by weekday correctly', () => {
       const grouped = groupParsedStaffByWeekday(mockParsedStaff);
       
-      expect(Object.keys(grouped)).toEqual(expect.arrayContaining(['Måndag', 'Tisdag']));
-      expect(grouped['Måndag']).toHaveLength(2);
-      expect(grouped['Tisdag']).toHaveLength(1);
+      expect(Object.keys(grouped)).toEqual(expect.arrayContaining(['Mån', 'Tis']));
+      expect(grouped['Mån']).toHaveLength(2);
+      expect(grouped['Tis']).toHaveLength(1);
       
-      expect(grouped['Måndag'][0].name).toBe('Anna Andersson');
-      expect(grouped['Måndag'][1].name).toBe('Björn Bergström');
-      expect(grouped['Tisdag'][0].name).toBe('Anna Andersson');
+      expect(grouped['Mån'][0].name).toBe('Anna Andersson');
+      expect(grouped['Mån'][1].name).toBe('Björn Bergström');
+      expect(grouped['Tis'][0].name).toBe('Anna Andersson');
     });
 
     it('should handle empty array', () => {
@@ -151,7 +146,7 @@ describe('staffConverter', () => {
       expect(summary.byRole.ane_ssk).toBe(1);
       expect(summary.byRole.ane_usk).toBe(0);
       
-      expect(summary.weekdays).toEqual(expect.arrayContaining(['Måndag', 'Tisdag']));
+      expect(summary.weekdays).toEqual(expect.arrayContaining(['Mån', 'Tis']));
     });
 
     it('should handle empty data', () => {

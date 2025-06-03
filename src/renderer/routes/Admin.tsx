@@ -18,43 +18,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { useAppStore } from '../stores/appStore';
 import { sv } from '../i18n/sv';
 import type { StaffMember } from '../types';
-
-// Draggable Staff Card Component
-function DraggableStaffCard({ staff }: { staff: StaffMember }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: staff.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
-  return (
-    <div      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className="bg-white shadow-sm cursor-move hover:shadow-md transition-shadow rounded-lg border border-gray-200"
-    >
-      <div className="p-3">
-        <h3 className="font-semibold text-sm">{staff.name}</h3>
-        <p className="text-xs text-gray-600">{staff.workHours}</p>
-        {staff.comments && (
-          <p className="text-xs text-gray-500 italic">
-            {staff.comments}
-          </p>
-        )}
-      </div>
-    </div>
-  );
-}
+import StaffCard from '../components/StaffCard';
 
 // Droppable Zone Component
 function DroppableZone({ 
@@ -79,19 +43,73 @@ function DroppableZone({
   );
 }
 
-export default function Admin() {  const { 
+// Sortable Staff Item Component  
+function SortableStaffItem({ 
+  staff,
+  onEdit,
+  onRemove
+}: {
+  staff: StaffMember;
+  onEdit: (updated: Partial<StaffMember>) => void;
+  onRemove: (staffId: string) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: staff.id });
+  
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+  
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+    >
+      <StaffCard
+        staff={staff}
+        isDragging={isDragging}
+        showActions={true}
+        onEdit={onEdit}
+        onRemove={onRemove}
+      />
+    </div>
+  );
+}
+
+export default function Admin() {
+  // Get only isDashboardMode first to check early return
+  const isDashboardMode = useAppStore(state => state.isDashboardMode);
+  
+  // Early return if dashboard mode is active (before any other hooks)
+  if (isDashboardMode) {
+    return null;
+  }
+
+  // Now safely get all other store values after early return check
+  const { 
     currentWeekId, 
     currentDayId, 
     getCurrentDay, 
     getCurrentWeek,
     setCurrentDay,
-    isDashboardMode,
     setDashboardMode,
     assignStaffToRoom,
     assignStaffToCorridor,
     unassignStaff,
     importStaff,
-    importDualStaff
+    importDualStaff,
+    updateStaff,
+    clearAvailableStaff,
   } = useAppStore();
 
   // Debug logging for component initialization
@@ -345,10 +363,26 @@ export default function Admin() {  const {
     setShowCustomStaffDialog(false);
   };
 
-  if (isDashboardMode) {
-    // Redirect to dashboard view
-    return null;
-  }
+  // Filter state
+  const [staffFilter, setStaffFilter] = React.useState('ALL');
+  const [workHoursFilter, setWorkHoursFilter] = React.useState('');
+  // Handler to clear available staff for current day
+  const handleClearAvailableStaff = () => {
+    clearAvailableStaff();
+  };
+  // Filtering logic
+  const filteredAvailableStaff = currentDay?.availableStaff.filter(staff => {
+    if (staffFilter === 'ALL') return true;
+    if (staffFilter === 'ANE') return staff.comments?.includes('[ANE]');
+    if (staffFilter === 'OP') return staff.comments?.includes('[OP]');
+    if (staffFilter === 'SSK') return staff.comments?.includes('SSK');
+    if (staffFilter === 'USK') return staff.comments?.includes('USK');
+    return true;
+  }).filter(staff => {
+    if (!workHoursFilter) return true;
+    return staff.workHours?.toLowerCase().includes(workHoursFilter.toLowerCase());
+  });
+
   return (
     <DndContext 
       sensors={sensors}
@@ -433,19 +467,52 @@ export default function Admin() {  const {
                         {sv.actions.add}
                       </button>
                     </div>
-                  </div>{/* Staff List */}
+                    {/* Clear available staff button */}
+                    <button
+                      className="w-full px-3 py-1.5 bg-red-100 text-red-700 text-xs rounded hover:bg-red-200 font-medium border border-red-300"
+                      onClick={handleClearAvailableStaff}
+                      title="Rensa tillgänglig personal för dagen"
+                    >
+                      Rensa lista
+                    </button>
+                    {/* Filter controls */}
+                    <div className="flex gap-2 mt-2">
+                      <select
+                        className="text-xs border rounded px-2 py-1 flex-1"
+                        value={staffFilter}
+                        onChange={e => setStaffFilter(e.target.value)}
+                      >
+                        <option value="ALL">Alla</option>
+                        <option value="OP">OP</option>
+                        <option value="ANE">ANE</option>
+                        <option value="SSK">SSK</option>
+                        <option value="USK">USK</option>
+                      </select>
+                      <input
+                        className="text-xs border rounded px-2 py-1 flex-1"
+                        placeholder="Filtrera arbetstid"
+                        value={workHoursFilter}
+                        onChange={e => setWorkHoursFilter(e.target.value)}
+                      />
+                    </div>
+                  </div>                  {/* Staff List */}
                   <SortableContext 
-                    items={currentDay.availableStaff.map(s => s.id)}
+                    items={filteredAvailableStaff ? filteredAvailableStaff.map(s => s.id) : []}
                     strategy={verticalListSortingStrategy}
                   >
                     <div className="space-y-2 max-h-96 overflow-y-auto">
-                      {currentDay.availableStaff.length === 0 ? (
+                      {(!filteredAvailableStaff || filteredAvailableStaff.length === 0) ? (
                         <div className="text-center text-gray-500 py-8">
                           {sv.messages.noStaffAvailable}
                         </div>
                       ) : (
-                        currentDay.availableStaff.map((staff) => (
-                          <DraggableStaffCard key={staff.id} staff={staff} />
+                        filteredAvailableStaff.map((staff) => (
+                          <SortableStaffItem
+                            key={staff.id}
+                            staff={staff}
+                            onEdit={(updated) => updateStaff(staff.id, updated)}
+                            onRemove={unassignStaff}
+                          />
                         ))
                       )}
                     </div>

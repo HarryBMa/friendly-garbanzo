@@ -30,8 +30,7 @@ export interface ExcelExportResult {
 }
 
 /**
- * Import staff data from Excel file
- * Expected columns: Name, Work hours, Comments
+ * Import staff data from Excel file (supports both simple and structured formats)
  */
 export async function importStaffFromExcel(filePath?: string): Promise<ExcelImportResult> {
   try {
@@ -54,10 +53,22 @@ export async function importStaffFromExcel(filePath?: string): Promise<ExcelImpo
       targetPath = result.filePaths[0];
     }
 
+    console.log('📖 Single file import - attempting structured parsing for:', targetPath);
+
+    // Try structured parsing first (for OP/ANE format)
+    const structuredResult = await readExcelFile(targetPath);
+    if (structuredResult.success && structuredResult.data.length > 0) {
+      console.log('✅ Structured parsing successful, found', structuredResult.data.length, 'staff members');
+      return structuredResult;
+    }
+
+    console.log('⚠️ Structured parsing failed, trying simple format...');
+
+    // Fallback to simple format parsing
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.readFile(targetPath);
     
-    const worksheet = workbook.getWorksheet(1); // First worksheet
+    const worksheet = workbook.getWorksheet(1);
     if (!worksheet) {
       return { success: false, data: [], errors: ['Kunde inte läsa arbetsblad'] };
     }
@@ -90,13 +101,19 @@ export async function importStaffFromExcel(filePath?: string): Promise<ExcelImpo
       });
     });
 
+    console.log('📊 Simple format parsing result:', {
+      staffCount: staff.length,
+      errorsCount: errors.length
+    });
+
     return {
-      success: true,
+      success: staff.length > 0,
       data: staff,
-      errors: errors.length > 0 ? errors : undefined
+      errors: errors.length > 0 ? errors : staff.length === 0 ? ['Inga giltiga personalrader hittades'] : undefined
     };
 
   } catch (error) {
+    console.error('💥 Single file import error:', error);
     return {
       success: false,
       data: [],
@@ -216,20 +233,35 @@ export async function importDualExcelFiles(): Promise<DualExcelImportResult> {
       opStaff: opStaffWithTags.length,
       aneStaff: aneStaffWithTags.length,
       totalStaff: combinedStaff.length
-    });
-
-    // Check for duplicates
-    const nameCount = new Map<string, number>();
+    });    // Check for actual duplicates (same person, same day, both files)
+    const duplicateMap = new Map<string, { op: boolean; ane: boolean; count: number }>();
+    
     combinedStaff.forEach(staff => {
-      const name = staff.name.toLowerCase();
-      nameCount.set(name, (nameCount.get(name) || 0) + 1);
+      // Extract base name and weekday from formatted name
+      const nameMatch = staff.name.match(/^(.+)\s+\((\w+)\)$/);
+      if (nameMatch) {
+        const [, baseName, weekday] = nameMatch;
+        const key = `${baseName.toLowerCase()}-${weekday.toLowerCase()}`;
+        const source = staff.comments.includes('[OP]') ? 'op' : 'ane';
+        
+        if (!duplicateMap.has(key)) {
+          duplicateMap.set(key, { op: false, ane: false, count: 0 });
+        }
+        
+        const entry = duplicateMap.get(key)!;
+        if (source === 'op') entry.op = true;
+        if (source === 'ane') entry.ane = true;
+        entry.count++;
+      }
     });
 
-    nameCount.forEach((count, name) => {
-      if (count > 1) {
-        warnings.push(`Dublett hittad: "${name}" finns i både OP- och ANE-filen`);
+    // Only warn about true duplicates (same person, same day, in both files)
+    duplicateMap.forEach((entry, key) => {
+      if (entry.op && entry.ane && entry.count > 1) {
+        const [baseName, weekday] = key.split('-');
+        warnings.push(`Dublett hittad: "${baseName}" finns i både OP- och ANE-filen för ${weekday}`);
       }
-    });    // Extract week number
+    });// Extract week number
     const week = extractWeekFromFileName(opFile.name) || extractWeekFromFileName(aneFile.name);
     console.log('📅 Extracted week:', week);
 
@@ -342,17 +374,18 @@ async function readExcelFile(filePath: string): Promise<ExcelImportResult> {
         // Look for comments in adjacent rows
         const commentCell = worksheet.getCell(row + 1, col);
         const comment = commentCell.value?.toString().trim() || '';
-        
-        console.log(`  📋 ${weekday} (${date}): hours="${workHours}" comment="${comment}"`);
+          console.log(`  📋 ${weekday} (${date}): hours="${workHours}" comment="${comment}"`);
 
         // Skip empty schedule cells
         if (!workHours && !comment) continue;
-
-        // Create a condensed work hours string for this person
+          // Create a condensed work hours string for this person
         const workSchedule = [workHours, comment].filter(Boolean).join(' - ');
         
+        // Convert abbreviated weekday to full Swedish day name for proper sorting
+        const fullSwedishDay = convertToFullSwedishDay(weekday);
+        
         staff.push({
-          name: nameValue,
+          name: `${nameValue} (${fullSwedishDay})`, // Append full weekday name for proper sorting
           workHours: workSchedule || 'Schemalagd',
           comments: `${currentRole} - ${weekday} ${date}`
         });
@@ -381,6 +414,23 @@ async function readExcelFile(filePath: string): Promise<ExcelImportResult> {
       errors: [`Strukturerad läsning misslyckades: ${error instanceof Error ? error.message : 'Okänt fel'}`]
     };
   }
+}
+
+/**
+ * Convert abbreviated weekday to full Swedish day name
+ */
+function convertToFullSwedishDay(abbreviatedDay: string): string {
+  const dayMapping: Record<string, string> = {
+    'Mån': 'Måndag',
+    'Tis': 'Tisdag', 
+    'Ons': 'Onsdag',
+    'Tor': 'Torsdag',
+    'Fre': 'Fredag',
+    'Lör': 'Lördag',
+    'Sön': 'Söndag'
+  };
+  
+  return dayMapping[abbreviatedDay] || abbreviatedDay;
 }
 
 /**

@@ -10,7 +10,9 @@ export function convertParsedStaffToMembers(parsedStaff: ParsedStaff[]): StaffMe
   const staffMap = new Map<string, StaffMember>();
 
   parsedStaff.forEach(parsed => {
-    const key = `${parsed.name.toLowerCase()}-${parsed.weekday}`;
+    // Convert abbreviated weekday to full Swedish day name
+    const fullSwedishDay = convertToFullSwedishDay(parsed.weekday);
+    const key = `${parsed.name.toLowerCase()}-${fullSwedishDay}`;
     
     if (staffMap.has(key)) {
       // If staff member already exists for this day, combine the info
@@ -41,10 +43,10 @@ export function convertParsedStaffToMembers(parsedStaff: ParsedStaff[]): StaffMe
       existing.workHours = combinedHours;
       existing.comments = combinedComments;
     } else {
-      // Create new staff member
+      // Create new staff member with full Swedish day name
       const staffMember: StaffMember = {
         id: generateStaffId(parsed),
-        name: `${parsed.name} (${parsed.weekday})`,
+        name: `${parsed.name} (${fullSwedishDay})`,
         workHours: parsed.workHours || '',
         comments: buildCommentsString(parsed),
         isCustom: false // These are from official Excel files
@@ -55,6 +57,23 @@ export function convertParsedStaffToMembers(parsedStaff: ParsedStaff[]): StaffMe
   });
 
   return Array.from(staffMap.values());
+}
+
+/**
+ * Convert abbreviated weekday to full Swedish day name
+ */
+function convertToFullSwedishDay(abbreviatedDay: string): string {
+  const dayMapping: Record<string, string> = {
+    'Mån': 'Måndag',
+    'Tis': 'Tisdag', 
+    'Ons': 'Onsdag',
+    'Tor': 'Torsdag',
+    'Fre': 'Fredag',
+    'Lör': 'Lördag',
+    'Sön': 'Söndag'
+  };
+  
+  return dayMapping[abbreviatedDay] || abbreviatedDay;
 }
 
 /**
