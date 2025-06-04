@@ -52,7 +52,7 @@ Build a Swedish Operating Room Staff Scheduling desktop application that runs as
 - **Column-Prioritized Layout for 16:9 Aspect Ratios**:
   - Optimized for wide-screen hospital displays (1080p)
   - Flexible CSS Grid for uniform room sizing
-  - Responsive corridor grid (3 fixed role columns)
+  - Responsive corridor grid (3 fixed role rows)
   - Sidebar for static details or extra info
   - **No scrollbars or overflow**: all data scales proportionally
 

@@ -1,4 +1,4 @@
-node_modules
+node_modules/
 # Ignore Electron build output and binaries
 release/
 *.exe

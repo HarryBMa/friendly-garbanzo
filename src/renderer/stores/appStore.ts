@@ -4,9 +4,12 @@ import type {
   DaySchedule, 
   WeekSchedule, 
   AppSettings, 
-  StaffMember
+  StaffMember,
+  OperatingRoom,
+  CorridorRole
 } from '../types';
 import { SWEDISH_DAYS } from '../types';
+import { createCorridorFunction } from '../utils/corridorHelpers';
 
 interface AppState {
   // Current state
@@ -32,17 +35,21 @@ interface AppState {
   importStaff: (staffList: StaffMember[]) => void;
   importDualStaff: (staffList: StaffMember[], weekInfo: { week: string; opFileName: string; aneFileName: string }) => void;
   importStructuredExcel: (files: File[]) => Promise<{ success: boolean; week: string; staffCount: number; summary?: any; error?: string }>;
-  
-  // Schedule management
+    // Schedule management
   createWeek: (name: string) => WeekSchedule;
   duplicateWeek: (weekId: string, newName: string) => WeekSchedule;
   updateDaySchedule: (weekId: string, dayId: string, schedule: Partial<DaySchedule>) => void;
+  
+  // Settings management
+  updateRoomSettings: (dayName: string, rooms: OperatingRoom[]) => void;
+  updateCorridorSettings: (dayName: string, corridorStaff: CorridorRole[]) => void;
   
   // Staff assignment
   assignStaffToRoom: (staffId: string, roomId: string, role: string) => void;
   assignStaffToCorridor: (staffId: string, corridorRoleId: string) => void;  unassignStaff: (staffId: string) => void;
   moveStaffToAvailable: (staffId: string) => void;
   clearAvailableStaff: () => void;
+  assignStaffToCorridorFunction: (staffId: string, functionId: string) => void;
   
   // Utility
   getCurrentDay: () => DaySchedule | undefined;
@@ -78,17 +85,26 @@ const createDefaultDay = (dayName: string, index: number): DaySchedule => {
       {
         id: 'corridor-search',
         name: 'Sök/Mottagning',
-        functions: []
+        functions: [
+          createCorridorFunction('Huvudansvarig', 'search-main'),
+          createCorridorFunction('Backup', 'search-backup')
+        ]
       },
       {
         id: 'corridor-responsibility',
         name: 'Korridorsansvar',
-        functions: []
+        functions: [
+          createCorridorFunction('Koordinator', 'resp-coordinator'),
+          createCorridorFunction('Support', 'resp-support')
+        ]
       },
       {
         id: 'corridor-standby',
         name: 'Beredskapsstråk',
-        functions: []
+        functions: [
+          createCorridorFunction('Beredskapsledare', 'standby-leader'),
+          createCorridorFunction('Backup', 'standby-backup')
+        ]
       }
     ],
     availableStaff: []
@@ -295,13 +311,41 @@ importDualStaff: (staffList: StaffMember[], weekInfo: { week: string; opFileName
           )
         })),
 
+      // Settings management
+      updateRoomSettings: (dayName: string, rooms: OperatingRoom[]) =>
+        set((state) => ({
+          weeks: state.weeks.map(week =>
+            week.id === state.currentWeekId
+              ? {
+                  ...week,
+                  days: week.days.map(day =>
+                    day.dayName === dayName ? { ...day, rooms } : day
+                  )
+                }
+              : week
+          )
+        })),
+
+      updateCorridorSettings: (dayName: string, corridorStaff: CorridorRole[]) =>
+        set((state) => ({
+          weeks: state.weeks.map(week =>
+            week.id === state.currentWeekId
+              ? {
+                  ...week,
+                  days: week.days.map(day =>
+                    day.dayName === dayName ? { ...day, corridorStaff } : day
+                  )
+                }
+              : week
+          )
+        })),
+
       // Staff assignment
       assignStaffToRoom: (staffId: string, roomId: string, role: string) =>
         set((state) => {
           const currentDay = state.weeks
             .find(w => w.id === state.currentWeekId)
             ?.days.find(d => d.id === state.currentDayId);
-          
           if (!currentDay) return state;
 
           // Find the staff member
@@ -310,16 +354,19 @@ importDualStaff: (staffList: StaffMember[], weekInfo: { week: string; opFileName
 
           // Remove from available staff
           const updatedAvailableStaff = currentDay.availableStaff.filter(s => s.id !== staffId);
-          
+
           // Update room staff
           const updatedRooms = currentDay.rooms.map(room => {
             if (room.id === roomId) {
               const updatedStaff = { ...room.staff };
-              if (role === 'pass') updatedStaff.pass = staffMember;
-              else if (role === 'opSSK') updatedStaff.opSSK = staffMember;
-              else if (role === 'aneSSK') updatedStaff.aneSSK = staffMember;
-              else if (role === 'student') {
-                updatedStaff.students = [...(updatedStaff.students || []), staffMember];
+              if (role === 'pass') {
+                updatedStaff.pass = [...(updatedStaff.pass || []), staffMember].slice(0, 3);
+              } else if (role === 'opSSK') {
+                updatedStaff.opSSK = [...(updatedStaff.opSSK || []), staffMember].slice(0, 3);
+              } else if (role === 'aneSSK') {
+                updatedStaff.aneSSK = [...(updatedStaff.aneSSK || []), staffMember].slice(0, 3);
+              } else if (role === 'student') {
+                updatedStaff.students = [...(updatedStaff.students || []), staffMember].slice(0, 3);
               }
               return { ...room, staff: updatedStaff };
             }
@@ -382,6 +429,59 @@ importDualStaff: (staffList: StaffMember[], weekInfo: { week: string; opFileName
           };
         }),
 
+      assignStaffToCorridorFunction: (staffId: string, functionId: string) =>
+        set((state) => {
+          const currentDay = state.weeks
+            .find(w => w.id === state.currentWeekId)
+            ?.days.find(d => d.id === state.currentDayId);
+          if (!currentDay) return state;
+
+          // Find the staff member
+          const staffMember = currentDay.availableStaff.find(s => s.id === staffId);
+          if (!staffMember) return state;
+
+          // Remove from available staff
+          const updatedAvailableStaff = currentDay.availableStaff.filter(s => s.id !== staffId);
+
+          // Remove staff from all other functions first
+          const cleanedCorridorStaff = currentDay.corridorStaff.map(role => ({
+            ...role,
+            functions: role.functions.map(fn => {
+              if (fn.staff && fn.staff.id === staffId) {
+                return { ...fn, staff: undefined };
+              }
+              return fn;
+            })
+          }));
+
+          // Assign staff to the target function (overwrite any existing staff)
+          const updatedCorridorStaff = cleanedCorridorStaff.map(role => ({
+            ...role,
+            functions: role.functions.map(fn => {
+              if (fn.id === functionId) {
+                return { ...fn, staff: { ...staffMember } };
+              }
+              return fn;
+            })
+          }));
+
+          return {
+            ...state,
+            weeks: state.weeks.map(week =>
+              week.id === state.currentWeekId
+                ? {
+                    ...week,
+                    days: week.days.map(day =>
+                      day.id === state.currentDayId
+                        ? { ...day, corridorStaff: updatedCorridorStaff, availableStaff: updatedAvailableStaff }
+                        : day
+                    )
+                  }
+                : week
+            )
+          };
+        }),
+
       unassignStaff: (staffId: string) =>
         set((state) => {
           const currentDay = state.weeks
@@ -395,18 +495,26 @@ importDualStaff: (staffList: StaffMember[], weekInfo: { week: string; opFileName
           // Find and remove from rooms
           const updatedRooms = currentDay.rooms.map(room => {
             const updatedStaff = { ...room.staff };
-            
-            if (updatedStaff.pass?.id === staffId) {
-              staffMember = updatedStaff.pass;
-              delete updatedStaff.pass;
+            if (Array.isArray(updatedStaff.pass)) {
+              if (updatedStaff.pass.some(s => s.id === staffId)) {
+                updatedStaff.pass = updatedStaff.pass.filter(s => s.id !== staffId);
+                if (updatedStaff.pass.length === 0) delete updatedStaff.pass;
+                staffMember = currentDay.availableStaff.find(s => s.id === staffId) || staffMember;
+              }
             }
-            if (updatedStaff.opSSK?.id === staffId) {
-              staffMember = updatedStaff.opSSK;
-              delete updatedStaff.opSSK;
+            if (Array.isArray(updatedStaff.opSSK)) {
+              if (updatedStaff.opSSK.some(s => s.id === staffId)) {
+                updatedStaff.opSSK = updatedStaff.opSSK.filter(s => s.id !== staffId);
+                if (updatedStaff.opSSK.length === 0) delete updatedStaff.opSSK;
+                staffMember = currentDay.availableStaff.find(s => s.id === staffId) || staffMember;
+              }
             }
-            if (updatedStaff.aneSSK?.id === staffId) {
-              staffMember = updatedStaff.aneSSK;
-              delete updatedStaff.aneSSK;
+            if (Array.isArray(updatedStaff.aneSSK)) {
+              if (updatedStaff.aneSSK.some(s => s.id === staffId)) {
+                updatedStaff.aneSSK = updatedStaff.aneSSK.filter(s => s.id !== staffId);
+                if (updatedStaff.aneSSK.length === 0) delete updatedStaff.aneSSK;
+                staffMember = currentDay.availableStaff.find(s => s.id === staffId) || staffMember;
+              }
             }
             if (updatedStaff.students) {
               const studentIndex = updatedStaff.students.findIndex(s => s.id === staffId);
@@ -415,17 +523,27 @@ importDualStaff: (staffList: StaffMember[], weekInfo: { week: string; opFileName
                 updatedStaff.students = updatedStaff.students.filter(s => s.id !== staffId);
               }
             }
-            
             return { ...room, staff: updatedStaff };
-          });
-
-          // Find and remove from corridor staff
+          });          // Find and remove from corridor staff (both legacy role.staff and function assignments)
           const updatedCorridorStaff = currentDay.corridorStaff.map(role => {
+            let updatedRole = { ...role };
+            
+            // Check legacy role staff assignment
             if (role.staff?.id === staffId) {
               staffMember = role.staff;
-              return { ...role, staff: undefined };
+              updatedRole.staff = undefined;
             }
-            return role;
+            
+            // Check function assignments
+            updatedRole.functions = role.functions.map(fn => {
+              if (fn.staff?.id === staffId) {
+                staffMember = fn.staff;
+                return { ...fn, staff: undefined };
+              }
+              return fn;
+            });
+            
+            return updatedRole;
           });
 
           // Add back to available staff if found

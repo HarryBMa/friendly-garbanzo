@@ -14,7 +14,14 @@ export default function SidebarPanel({ day }: SidebarPanelProps) {
       (room.staff.aneSSK ? 1 : 0) +
       (room.staff.students?.length || 0);
   }, 0);
-  const assignedToCorridor = day.corridorStaff.filter(role => role.staff).length;
+  
+  // Count staff assigned to corridor functions (not legacy role.staff)
+  const assignedToCorridor = day.corridorStaff.reduce((count, role) => {
+    const functionsWithStaff = role.functions.filter(fn => fn.staff).length;
+    const legacyStaff = role.staff ? 1 : 0; // Legacy compatibility
+    return count + functionsWithStaff + legacyStaff;
+  }, 0);
+  
   const unassigned = totalStaff - assignedToRooms - assignedToCorridor;
 
   return (    <div className="space-y-4 text-xs">
@@ -83,17 +90,28 @@ export default function SidebarPanel({ day }: SidebarPanelProps) {
       <div className="bg-gray-200 p-2 rounded">
         <h3 className="font-semibold text-sm mb-2">Korridorstatus</h3>
         <div className="space-y-1">
-          {day.corridorStaff.map((role) => (
-            <div key={role.id} className="flex justify-between items-center">
-              <span className="truncate flex-1 mr-2">{role.name}:</span>              <span 
-                className={`w-2 h-2 rounded-full ${
-                  role.staff ? 'bg-green-500' : 'bg-red-500'
-                }`}
-              />
-            </div>
-          ))}
+          {day.corridorStaff.map((role) => {
+            const functionsWithStaff = role.functions.filter(fn => fn.staff).length;
+            const totalFunctions = role.functions.length;
+            const hasLegacyStaff = role.staff ? 1 : 0;
+            const totalAssigned = functionsWithStaff + hasLegacyStaff;
+            
+            return (
+              <div key={role.id} className="flex justify-between items-center">
+                <span className="truncate flex-1 mr-2">{role.name}:</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-xs">{totalAssigned}/{totalFunctions}</span>
+                  <span 
+                    className={`w-2 h-2 rounded-full ${
+                      totalAssigned > 0 ? 'bg-green-500' : 'bg-red-500'
+                    }`}
+                  />
+                </div>
+              </div>
+            );
+          })}
         </div>
-      </div>      {/* Quick Actions */}
+      </div>{/* Quick Actions */}
       <div className="bg-gray-200 p-2 rounded">
         <h3 className="font-semibold text-sm mb-2">Snabbåtgärder</h3>        <div className="space-y-1">
           <button className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 w-full">

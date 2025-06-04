@@ -72,19 +72,20 @@ describe('corridorHelpers', () => {
       expect(role.id).toBe(customId);
     });
   });
-
   describe('validateCorridorFunction', () => {
     // ✅ Normal case
     it('should validate a correct corridor function', () => {
       const validFunction: CorridorFunction = {
         id: 'test-id',
         label: '1301',
+        pager: '1234',
+        comments: 'Erfaren SSK',
+        lunchRooms: ['3701', '3704'],
         staff: {
+          id: 'staff-1',
           name: 'Anna Andersson',
           workHours: '08:00-16:00',
-          pager: '1234',
-          comments: 'Erfaren SSK',
-          lunchRooms: ['3701', '3704']
+          comments: 'Erfaren SSK'
         }
       };
 
@@ -114,19 +115,18 @@ describe('corridorHelpers', () => {
 
       const errors = validateCorridorFunction(invalidFunction);
       expect(errors).toContain('Funktionsetikett får inte vara längre än 50 tecken');
-    });
-
-    // ❌ Invalid case - staff validation errors
+    });    // ❌ Invalid case - staff validation errors
     it('should validate staff data when present', () => {
       const invalidFunction: CorridorFunction = {
         id: 'test-id',
         label: '1301',
+        pager: 'P'.repeat(21),
+        lunchRooms: ['', 'A'.repeat(11)],
         staff: {
+          id: 'staff-1',
           name: '',
           workHours: '',
-          comments: 'C'.repeat(501),
-          pager: 'P'.repeat(21),
-          lunchRooms: ['', 'A'.repeat(11)]
+          comments: 'C'.repeat(501)
         }
       };
 
@@ -152,8 +152,7 @@ describe('corridorHelpers', () => {
     });
   });
 
-  describe('validateCorridorRole', () => {
-    // ✅ Normal case
+  describe('validateCorridorRole', () => {    // ✅ Normal case
     it('should validate a correct corridor role', () => {
       const validRole: CorridorRole = {
         id: 'test-role-id',
@@ -163,8 +162,10 @@ describe('corridorHelpers', () => {
             id: 'func-1',
             label: '1301',
             staff: {
+              id: 'staff-1',
               name: 'Anna Andersson',
-              workHours: '08:00-16:00'
+              workHours: '08:00-16:00',
+              comments: 'Erfaren SSK'
             }
           }
         ]
@@ -172,7 +173,7 @@ describe('corridorHelpers', () => {
 
       const errors = validateCorridorRole(validRole);
       expect(errors).toHaveLength(0);
-    });    // ❌ Invalid case - missing name
+    });// ❌ Invalid case - missing name
     it('should catch missing role name', () => {
       const invalidRole = {
         id: 'test-role-id',
@@ -226,7 +227,6 @@ describe('corridorHelpers', () => {
       expect(errors).toContain('Funktion 1: Funktionsetikett krävs');
     });
   });
-
   describe('countAssignedStaff', () => {
     // ✅ Normal case
     it('should count assigned staff correctly', () => {
@@ -237,12 +237,22 @@ describe('corridorHelpers', () => {
           {
             id: 'func-1',
             label: '1301',
-            staff: { name: 'Anna', workHours: '08:00-16:00' }
+            staff: { 
+              id: 'staff-1',
+              name: 'Anna', 
+              workHours: '08:00-16:00',
+              comments: ''
+            }
           },
           {
             id: 'func-2',
             label: '1302',
-            staff: { name: 'Björn', workHours: '08:00-16:00' }
+            staff: { 
+              id: 'staff-2',
+              name: 'Björn', 
+              workHours: '08:00-16:00',
+              comments: ''
+            }
           },
           {
             id: 'func-3',
@@ -283,7 +293,6 @@ describe('corridorHelpers', () => {
       expect(count).toBe(0);
     });
   });
-
   describe('getLunchRoomsCovered', () => {
     // ✅ Normal case
     it('should get all lunch rooms covered by a role', () => {
@@ -294,19 +303,23 @@ describe('corridorHelpers', () => {
           {
             id: 'func-1',
             label: '1301',
+            lunchRooms: ['3701', '3704'],
             staff: {
+              id: 'staff-1',
               name: 'Anna',
               workHours: '08:00-16:00',
-              lunchRooms: ['3701', '3704']
+              comments: ''
             }
           },
           {
             id: 'func-2',
             label: '1302',
+            lunchRooms: ['3702', '3701'], // Duplicate 3701
             staff: {
+              id: 'staff-2',
               name: 'Björn',
               workHours: '08:00-16:00',
-              lunchRooms: ['3702', '3701'] // Duplicate 3701
+              comments: ''
             }
           }
         ]
@@ -314,9 +327,7 @@ describe('corridorHelpers', () => {
 
       const rooms = getLunchRoomsCovered(role);
       expect(rooms).toEqual(['3701', '3702', '3704']); // Sorted and deduplicated
-    });
-
-    // 🧪 Edge case - no lunch rooms
+    });    // 🧪 Edge case - no lunch rooms
     it('should return empty array when no lunch rooms covered', () => {
       const role: CorridorRole = {
         id: 'test-role',
@@ -325,7 +336,12 @@ describe('corridorHelpers', () => {
           {
             id: 'func-1',
             label: 'Beredskapsstråk',
-            staff: { name: 'Carl', workHours: '08:00-16:00' }
+            staff: { 
+              id: 'staff-1',
+              name: 'Carl', 
+              workHours: '08:00-16:00',
+              comments: ''
+            }
           }
         ]
       };

@@ -57,18 +57,16 @@ export function validateCorridorFunction(func: CorridorFunction): string[] {
 
     if (func.staff.workHours && func.staff.workHours.length > 50) {
       errors.push('Arbetstider får inte vara längre än 50 tecken');
-    }
-
-    if (func.staff.comments && func.staff.comments.length > 500) {
+    }    if (func.staff.comments && func.staff.comments.length > 500) {
       errors.push('Kommentarer får inte vara längre än 500 tecken');
     }
 
-    if (func.staff.pager && func.staff.pager.length > 20) {
+    if (func.pager && func.pager.length > 20) {
       errors.push('Sökarnummer får inte vara längre än 20 tecken');
     }
 
-    if (func.staff.lunchRooms) {
-      func.staff.lunchRooms.forEach((room, index) => {
+    if (func.lunchRooms) {
+      func.lunchRooms.forEach((room, index) => {
         if (!room || room.trim().length === 0) {
           errors.push(`Lunch rum ${index + 1} får inte vara tomt`);
         }
@@ -122,10 +120,9 @@ export function countAssignedStaff(role: CorridorRole): number {
  */
 export function getLunchRoomsCovered(role: CorridorRole): string[] {
   const rooms: string[] = [];
-  
-  role.functions.forEach(func => {
-    if (func.staff?.lunchRooms) {
-      rooms.push(...func.staff.lunchRooms);
+    role.functions.forEach(func => {
+    if (func.lunchRooms) {
+      rooms.push(...func.lunchRooms);
     }
   });
 

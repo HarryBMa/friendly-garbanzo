@@ -7,9 +7,9 @@ export interface StaffMember {
 }
 
 export interface RoomStaff {
-  pass?: StaffMember;
-  opSSK?: StaffMember;
-  aneSSK?: StaffMember;
+  pass?: StaffMember[];
+  opSSK?: StaffMember[];
+  aneSSK?: StaffMember[];
   students?: StaffMember[];
 }
 
@@ -22,13 +22,10 @@ export interface OperatingRoom {
 export interface CorridorFunction {
   id: string;
   label: string; // e.g. "1301", "Lunch 3704"
-  staff?: {
-    name: string;
-    workHours: string;
-    pager?: string;
-    comments?: string;
-    lunchRooms?: string[]; // ["3701", "3704"]
-  };
+  staff?: StaffMember; // Only one staff per function
+  pager?: string;
+  comments?: string;
+  lunchRooms?: string[]; // ["3701", "3704"]
 }
 
 export interface CorridorRole {
