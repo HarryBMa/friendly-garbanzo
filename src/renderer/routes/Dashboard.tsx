@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAppStore } from '../stores/appStore';
 import { sv } from '../i18n/sv';
 import { formatTime, getRelativeDayDescription } from '../utils/dateHelpers';
-import DashboardLayout from '../components/Dashboard/DashboardLayout';
+import DashboardLayout from '../components/DashboardLayout';
 
 export default function Dashboard() {
   const { 

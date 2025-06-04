@@ -8,7 +8,7 @@ Build a Swedish Operating Room Staff Scheduling desktop application that runs as
 ### Core Technologies
 - **Framework**: Electron (portable executable)
 - **Build Tool**: Vite
-- **Frontend**: React 18+ with TypeScript
+- **Frontend**: React 19+ with TypeScript
 - **Styling**: Tailwind CSS 4.1+ (CSS-only config)
 - **Drag & Drop**: @dnd-kit/core, @dnd-kit/sortable
 - **Excel Processing**: ExcelJS (modern replacement for xlsx)
