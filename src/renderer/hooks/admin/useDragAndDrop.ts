@@ -2,7 +2,6 @@ import React from 'react';
 import { useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import type { StaffMember } from '../../types';
-import useCorridorStore from '../../stores/corridorStore';
 
 /**
  * Custom hook for managing drag and drop operations in the Admin component.
@@ -35,18 +34,17 @@ export function useDragAndDrop(
     if (staffMember) {
       setActiveStaff(staffMember);
       return;
-    }
-    
-    // Check if dragging from corridor (corridor-staffId format)
+    }      // Check if dragging from corridor functions (corridor-staffId format)
     if (activeId.startsWith('corridor-')) {
       const staffId = activeId.replace('corridor-', '');
       
-      // Find which corridor cell this staff is in
-      const { assignments } = useCorridorStore.getState();
-      for (const [, assignedStaff] of Object.entries(assignments)) {
-        if (assignedStaff?.id === staffId) {
-          setActiveStaff(assignedStaff);
-          return;
+      // Find staff in corridor functions
+      for (const role of currentDay?.corridorStaff || []) {
+        for (const fn of role.functions) {
+          if (fn.staff && fn.staff.id === staffId) {
+            setActiveStaff(fn.staff);
+            return;
+          }
         }
       }
     }
@@ -68,18 +66,17 @@ export function useDragAndDrop(
     // Check if dragging from corridor
     const isDraggingFromCorridor = activeId.startsWith('corridor-');
     let staffMember: StaffMember | undefined;
-    let fromCorridorCellId: string | null = null;
-    
-    if (isDraggingFromCorridor) {
+    let fromCorridorCellId: string | null = null;      if (isDraggingFromCorridor) {
       const staffId = activeId.replace('corridor-', '');
-      const { assignments } = useCorridorStore.getState();
       
-      // Find which corridor cell this staff is currently in
-      for (const [cellId, assignedStaff] of Object.entries(assignments)) {
-        if (assignedStaff?.id === staffId) {
-          staffMember = assignedStaff;
-          fromCorridorCellId = cellId;
-          break;
+      // Find staff in corridor functions
+      for (const role of currentDay?.corridorStaff || []) {
+        for (const fn of role.functions) {
+          if (fn.staff && fn.staff.id === staffId) {
+            staffMember = fn.staff;
+            fromCorridorCellId = fn.id; // Use function id instead of cell id
+            break;
+          }
         }
       }
     } else {
@@ -119,84 +116,44 @@ export function useDragAndDrop(
         alert('Max 3 personal per roll i denna sal!');
         return;
       }
-      
-      // Remove from corridor if moving from there
+        // Remove from corridor if moving from there
       if (isDraggingFromCorridor && fromCorridorCellId) {
-        const { removeStaffAssignment } = useCorridorStore.getState();
-        removeStaffAssignment(fromCorridorCellId);
-      }
-      
-      assignStaffToRoom(staffMember.id, `room-${roomId}`, role);
-    } else if (dropId.startsWith('op-') || dropId.startsWith('ane-')) {
-      // Dropping into corridor grid cells
-      const { assignStaff, getAssignedStaff, removeStaffAssignment } = useCorridorStore.getState();
-      
-      // Check if target cell is already occupied
-      const existingStaff = getAssignedStaff(dropId);
-      if (existingStaff) {
-        alert('Denna position är redan upptagen!');
-        return;
-      }
-      
-      // Remove from previous corridor cell if moving within corridor
-      if (isDraggingFromCorridor && fromCorridorCellId) {
-        removeStaffAssignment(fromCorridorCellId);
-      } else {
-        // Remove from available staff if moving from there
         unassignStaff(staffMember.id);
       }
       
-      // Assign to new corridor cell
-      assignStaff(dropId, staffMember);
-    } else if (dropId === 'available-staff-zone') {
+      assignStaffToRoom(staffMember.id, `room-${roomId}`, role);    } else if (dropId === 'available-staff-zone') {
       // Dropping back into available staff
       if (isDraggingFromCorridor && fromCorridorCellId) {
-        const { removeStaffAssignment } = useCorridorStore.getState();
-        removeStaffAssignment(fromCorridorCellId);
-        
-        // Add back to available staff
-        if (currentDay && !currentDay.availableStaff.find((s: StaffMember) => s.id === staffMember.id)) {
-          currentDay.availableStaff.push(staffMember);
-        }
+        unassignStaff(staffMember.id);
       }
     } else if (dropId.startsWith('corridor-fn-')) {
-      // Legacy corridor function slot
+      // Function-based corridor assignment
       const functionId = dropId.replace('corridor-fn-', '');
       let fnHasStaff = false;
       for (const role of currentDay?.corridorStaff || []) {
         for (const fn of role.functions) {
-          if (fn.id === functionId) {
-            if (fn.staff) {
-              fnHasStaff = true;
-            }
+          if (fn.id === functionId && fn.staff) {
+            fnHasStaff = true;
+            break;
           }
         }
       }
       if (fnHasStaff) {
         alert('Endast 1 personal tillåten för denna funktion!');
         return;
-      }
-      
+      }      
       // Remove from corridor if moving from there
       if (isDraggingFromCorridor && fromCorridorCellId) {
-        const { removeStaffAssignment } = useCorridorStore.getState();
-        removeStaffAssignment(fromCorridorCellId);
+        unassignStaff(staffMember.id);
       }
       
       assignStaffToCorridorFunction(staffMember.id, functionId);
     } else if (dropId === 'corridor-extra') {
       // Move staff to extra/blank (unassign from all functions/roles)
       if (isDraggingFromCorridor && fromCorridorCellId) {
-        const { removeStaffAssignment } = useCorridorStore.getState();
-        removeStaffAssignment(fromCorridorCellId);
+        unassignStaff(staffMember.id);
       }
       unassignStaff(staffMember.id);
-    } else if (dropId.startsWith('corridor-')) {
-      // Legacy corridor role assignment
-      if (isDraggingFromCorridor && fromCorridorCellId) {
-        const { removeStaffAssignment } = useCorridorStore.getState();
-        removeStaffAssignment(fromCorridorCellId);
-      }
     }
   };
   return {
