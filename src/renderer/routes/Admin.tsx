@@ -9,7 +9,7 @@ import { useAppStore } from '../stores/appStore';
 import { sv } from '../i18n/sv';
 import { CustomStaffDialog, AvailableStaffPanel, OperatingRoomsGrid } from '../components/admin';
 import type { CustomStaffForm } from '../components/admin';
-import { handleImportExcel, handleImportDualExcel } from '../utils/admin/importHandlers';
+import { handleUnifiedExcelImport } from '../utils/admin/unifiedImportHandler';
 import { useDragAndDrop } from '../hooks/admin/useDragAndDrop';
 
 interface AdminProps {
@@ -36,26 +36,25 @@ export default function Admin({ onOpenSettings }: AdminProps) {
     assignStaffToRoom,
     assignStaffToCorridorFunction,
     unassignStaff,
-    importStaff,
-    importDualStaff,
+    importMultiWeekFile,
+    importIndependentFile,
     updateStaff,
     resetToDefaults,
   } = useAppStore();
-
   // Debug logging for component initialization
   React.useEffect(() => {
     console.log('🎯 Admin component mounted');
     console.log('🔧 ElectronAPI available:', !!window.electronAPI);
     console.log('📦 Store methods available:', {
-      importStaff: !!importStaff,
-      importDualStaff: !!importDualStaff,
+      importMultiWeekFile: !!importMultiWeekFile,
+      importIndependentFile: !!importIndependentFile,
       getCurrentDay: !!getCurrentDay
     });
     
     if (window.electronAPI) {
       console.log('⚡ ElectronAPI methods:', Object.keys(window.electronAPI));
     }
-  }, []);  // Use the extracted drag and drop hook
+  }, []);// Use the extracted drag and drop hook
   const { 
     activeStaff, 
     handleDragStart, 
@@ -84,26 +83,11 @@ export default function Admin({ onOpenSettings }: AdminProps) {
 
   const handleDaySwitch = (dayId: string) => {
     setCurrentDay(dayId);
-  };
-  const toggleDashboardMode = () => {
+  };  const toggleDashboardMode = () => {
     setDashboardMode(!isDashboardMode);
-  };  // Import handlers from extracted utility
-  const handleImportExcelClick = () => handleImportExcel(importStaff, getCurrentDay);
-  const handleImportDualExcelClick = () => {
-    // Create a wrapper that adapts the dual import handler to the store's expected interface
-    const adaptedImportDualStaff = (opData: any[], aneData: any[]) => {
-      // Combine the data and create a weekInfo object
-      const combinedStaff = [...opData, ...aneData];
-      const weekInfo = {
-        week: 'Imported Week',
-        opFileName: 'OP_import.xlsx',
-        aneFileName: 'ANE_import.xlsx'
-      };
-      importDualStaff(combinedStaff, weekInfo);
-    };
-    
-    return handleImportDualExcel(adaptedImportDualStaff, getCurrentDay);
   };
+  // Unified import handler
+  const handleUnifiedImport = () => handleUnifiedExcelImport(importMultiWeekFile, importIndependentFile);
   
   const handleAddCustomStaff = () => {
     console.log('🚀 Opening custom staff dialog');
@@ -217,8 +201,7 @@ export default function Admin({ onOpenSettings }: AdminProps) {
                 workHoursFilter={workHoursFilter}
                 onStaffFilterChange={setStaffFilter}
                 onWorkHoursFilterChange={setWorkHoursFilter}
-                onImportExcel={handleImportExcelClick}
-                onImportDualExcel={handleImportDualExcelClick}
+                onImportExcel={handleUnifiedImport}
                 onAddCustomStaff={handleAddCustomStaff}
                 onClearAvailableStaff={handleClearAvailableStaff}
                 onUpdateStaff={updateStaff}

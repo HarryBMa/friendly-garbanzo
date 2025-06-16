@@ -2,6 +2,8 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { importStaffFromExcel, exportScheduleToExcel, importDualExcelFiles } from './fileHandler';
+// Initialize network sync handler (sets up IPC handlers)
+import './syncHandler';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 

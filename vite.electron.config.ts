@@ -10,9 +10,8 @@ export default defineConfig({
       formats: ['cjs']
     },
     outDir: 'dist-electron',
-    emptyOutDir: true,
-    rollupOptions: {
-      external: ['electron', 'exceljs', 'path', 'url'],
+    emptyOutDir: true,    rollupOptions: {
+      external: ['electron', 'exceljs', 'path', 'url', 'fs', 'fs/promises'],
       output: {
         entryFileNames: '[name].cjs'
       }

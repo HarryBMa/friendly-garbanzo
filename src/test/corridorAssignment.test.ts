@@ -46,13 +46,13 @@ describe('Corridor Assignment Integration', () => {
           ],
           availableStaff: [...mockStaff]
         }]
-      }],
-      availableStaff: [...mockStaff],
+      }],      availableStaff: [...mockStaff],
       settings: {
         currentDay: 'day-måndag',
         currentWeek: 'week-test',
-        rooms: [],
-        corridorStaff: []
+        isDashboardMode: false,
+        autoRefresh: false,
+        refreshInterval: 30000
       }
     });
   });

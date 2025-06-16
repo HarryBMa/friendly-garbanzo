@@ -47,7 +47,36 @@ export interface DaySchedule {
 export interface WeekSchedule {
   id: string;
   name: string;
+  weekNumber?: number; // Add week number for multi-week support
   days: DaySchedule[];
+}
+
+// Multi-week schedule support
+export interface MultiWeekSchedule {
+  id: string;
+  name: string;
+  startWeek: number;
+  endWeek: number;
+  weekSpan: string; // e.g., "v.22-35"
+  weeks: Map<number, WeekSchedule>;
+}
+
+// Import result types for multi-week
+export interface MultiWeekImportResult {
+  success: boolean;
+  weekSpan: string;
+  totalWeeks: number;
+  totalStaff: number;
+  opFileName?: string;
+  aneFileName?: string;
+  mergeReport?: {
+    opStaffCount: number;
+    aneStaffCount: number;
+    conflicts?: string[];
+    additions?: string[];
+  };
+  errors?: string[];
+  warnings?: string[];
 }
 
 export interface AppSettings {
@@ -132,4 +161,25 @@ export interface ExcelFileInfo {
   fileName: string;
   type: 'OP' | 'ANE';
   isValid: boolean;
+}
+
+// Network synchronization types
+export interface SyncConflict {
+  local: WeekSchedule[];
+  remote: WeekSchedule[];
+  lastModified: string;
+  modifiedBy: string;
+}
+
+export interface SyncMessage {
+  type: 'conflict' | 'update' | 'error';
+  data?: any;
+  error?: string;
+}
+
+export interface SyncStatus {
+  isConnected: boolean;
+  lastSync: Date | null;
+  clientId: string;
+  hasConflicts: boolean;
 }

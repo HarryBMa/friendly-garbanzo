@@ -6,7 +6,9 @@ import type {
   AppSettings, 
   StaffMember,
   OperatingRoom,
-  CorridorRole
+  CorridorRole,
+  MultiWeekSchedule,
+  MultiWeekImportResult
 } from '../types';
 import { SWEDISH_DAYS } from '../types';
 
@@ -19,6 +21,9 @@ interface AppState {
   // Data
   weeks: WeekSchedule[];
   availableStaff: StaffMember[];
+  
+  // Multi-week support
+  activeMultiWeekSchedule?: MultiWeekSchedule;
   
   // Settings
   settings: AppSettings;
@@ -34,10 +39,17 @@ interface AppState {
   importStaff: (staffList: StaffMember[]) => void;
   importDualStaff: (staffList: StaffMember[], weekInfo: { week: string; opFileName: string; aneFileName: string }) => void;
   importStructuredExcel: (files: File[]) => Promise<{ success: boolean; week: string; staffCount: number; summary?: any; error?: string }>;
-    // Schedule management
+
+  // Multi-week import functions
+  importMultiWeekFile: (file: File) => Promise<MultiWeekImportResult>;
+  importIndependentFile: (file: File, mergeWithExisting?: boolean) => Promise<MultiWeekImportResult>;
+  setActiveMultiWeek: (schedule: MultiWeekSchedule) => void;
+  
+  // Schedule management
   createWeek: (name: string) => WeekSchedule;
   duplicateWeek: (weekId: string, newName: string) => WeekSchedule;
   updateDaySchedule: (weekId: string, dayId: string, schedule: Partial<DaySchedule>) => void;
+  setWeeks: (weeks: WeekSchedule[]) => void;
   
   // Settings management
   updateRoomSettings: (dayName: string, rooms: OperatingRoom[]) => void;
@@ -127,13 +139,13 @@ const createDefaultWeek = (): WeekSchedule => ({
 
 export const useAppStore = create<AppState>()(
   persist(
-    (set, get) => ({
-      // Initial state
+    (set, get) => ({      // Initial state
       currentWeekId: 'week-default',
       currentDayId: 'day-måndag',
       isDashboardMode: false,
       weeks: [createDefaultWeek()],
       availableStaff: [],
+      activeMultiWeekSchedule: undefined,
       settings: {
         currentDay: 'day-måndag',
         currentWeek: 'week-default',
@@ -305,7 +317,10 @@ importDualStaff: (staffList: StaffMember[], weekInfo: { week: string; opFileName
         }));
         
         return newWeek;
-      },      updateDaySchedule: (weekId: string, dayId: string, schedule: Partial<DaySchedule>) =>
+      },      setWeeks: (weeks: WeekSchedule[]) =>
+        set(() => ({ weeks })),
+
+      updateDaySchedule: (weekId: string, dayId: string, schedule: Partial<DaySchedule>) =>
         set((state) => ({
           weeks: state.weeks.map(week =>
             week.id === weekId
@@ -757,12 +772,167 @@ importDualStaff: (staffList: StaffMember[], weekInfo: { week: string; opFileName
         const { weeks, currentWeekId, currentDayId } = get();
         const currentWeek = weeks.find(w => w.id === currentWeekId);
         return currentWeek?.days.find(d => d.id === currentDayId);
-      },
-
-      getCurrentWeek: () => {
+      },      getCurrentWeek: () => {
         const { weeks, currentWeekId } = get();
         return weeks.find(w => w.id === currentWeekId);
       },
+
+      // Multi-week import functions
+      importMultiWeekFile: async (file: File) => {
+        try {
+          const { parseMultiWeekExcelFile } = await import('../utils/multiWeekExcelParser');
+          const { convertMultiWeekStaffToWeeks } = await import('../utils/staffConverter');          const parseResult = await parseMultiWeekExcelFile(file);
+          const weekStaffMap = convertMultiWeekStaffToWeeks(parseResult.staff);
+
+          // Create multi-week schedule
+          const multiWeekSchedule: MultiWeekSchedule = {
+            id: `multi-week-${Date.now()}`,
+            name: `${parseResult.weekSpan} (${parseResult.fileName})`,
+            startWeek: parseResult.startWeek,
+            endWeek: parseResult.endWeek,
+            weekSpan: parseResult.weekSpan,
+            weeks: new Map()
+          };
+
+          // Convert each week's data to WeekSchedule
+          weekStaffMap.forEach((dayMap, weekNum) => {
+            const weekSchedule: WeekSchedule = {
+              id: `week-${weekNum}`,
+              name: `v.${weekNum}`,
+              weekNumber: weekNum,
+              days: SWEDISH_DAYS.map((dayName, index) => {
+                const dayStaff = dayMap.get(dayName) || [];
+                return {
+                  ...createDefaultDay(dayName, index),
+                  availableStaff: dayStaff
+                };
+              })
+            };
+            multiWeekSchedule.weeks.set(weekNum, weekSchedule);
+          });          // Update store with multi-week schedule
+          set(() => ({
+            activeMultiWeekSchedule: multiWeekSchedule,
+            weeks: Array.from(multiWeekSchedule.weeks.values())
+          }));
+
+          return {
+            success: true,
+            weekSpan: parseResult.weekSpan,
+            totalWeeks: parseResult.totalWeeks,
+            totalStaff: parseResult.staff.length,
+            [parseResult.source === 'op' ? 'opFileName' : 'aneFileName']: parseResult.fileName,
+            warnings: parseResult.warnings
+          };
+        } catch (error) {
+          console.error('Multi-week import error:', error);
+          return {
+            success: false,
+            weekSpan: '',
+            totalWeeks: 0,
+            totalStaff: 0,
+            errors: [error instanceof Error ? error.message : 'Unknown error occurred']
+          };
+        }
+      },
+
+      importIndependentFile: async (file: File, mergeWithExisting = true) => {
+        try {
+          const { parseMultiWeekExcelFile, combineMultiWeekData } = await import('../utils/multiWeekExcelParser');
+          const { convertMultiWeekStaffToWeeks } = await import('../utils/staffConverter');
+
+          const parseResult = await parseMultiWeekExcelFile(file);
+          const { activeMultiWeekSchedule } = get();
+          
+          let combinedResult;
+          let existingStaff: any[] = [];
+          
+          // If merging with existing data, extract current staff
+          if (mergeWithExisting && activeMultiWeekSchedule) {
+            activeMultiWeekSchedule.weeks.forEach(week => {
+              week.days.forEach(day => {
+                existingStaff.push(...day.availableStaff.map(staff => ({
+                  ...staff,
+                  weekNumber: week.weekNumber || 1,
+                  weekday: day.dayName,
+                  sourceFile: staff.comments?.includes('[OP]') ? 'op' : 'ane'
+                })));
+              });
+            });
+            
+            // Combine new data with existing
+            if (parseResult.source === 'op') {
+              combinedResult = combineMultiWeekData(parseResult, undefined, existingStaff);
+            } else {
+              combinedResult = combineMultiWeekData(undefined, parseResult, existingStaff);
+            }
+          } else {
+            // Create new schedule from this file only
+            if (parseResult.source === 'op') {
+              combinedResult = combineMultiWeekData(parseResult);
+            } else {
+              combinedResult = combineMultiWeekData(undefined, parseResult);
+            }
+          }
+
+          const weekStaffMap = convertMultiWeekStaffToWeeks(combinedResult.combinedStaff);
+          
+          // Create/update multi-week schedule
+          const multiWeekSchedule: MultiWeekSchedule = {
+            id: activeMultiWeekSchedule?.id || `multi-week-${Date.now()}`,
+            name: `${parseResult.weekSpan} (${parseResult.fileName}${activeMultiWeekSchedule ? ' + existing' : ''})`,
+            startWeek: parseResult.startWeek,
+            endWeek: parseResult.endWeek,
+            weekSpan: parseResult.weekSpan,
+            weeks: new Map()
+          };
+
+          // Convert combined data to WeekSchedule
+          weekStaffMap.forEach((dayMap, weekNum) => {
+            const weekSchedule: WeekSchedule = {
+              id: `week-${weekNum}`,
+              name: `v.${weekNum}`,
+              weekNumber: weekNum,
+              days: SWEDISH_DAYS.map((dayName, index) => {
+                const dayStaff = dayMap.get(dayName) || [];
+                return {
+                  ...createDefaultDay(dayName, index),
+                  availableStaff: dayStaff
+                };
+              })
+            };
+            multiWeekSchedule.weeks.set(weekNum, weekSchedule);
+          });          // Update store
+          set(() => ({
+            activeMultiWeekSchedule: multiWeekSchedule,
+            weeks: Array.from(multiWeekSchedule.weeks.values())
+          }));
+
+          return {
+            success: true,
+            weekSpan: parseResult.weekSpan,
+            totalWeeks: parseResult.totalWeeks,
+            totalStaff: combinedResult.combinedStaff.length,
+            [parseResult.source === 'op' ? 'opFileName' : 'aneFileName']: parseResult.fileName,
+            mergeReport: combinedResult.mergeReport,
+            warnings: parseResult.warnings
+          };
+        } catch (error) {
+          console.error('Independent file import error:', error);
+          return {
+            success: false,
+            weekSpan: '',
+            totalWeeks: 0,
+            totalStaff: 0,
+            errors: [error instanceof Error ? error.message : 'Unknown error occurred']
+          };
+        }
+      },
+
+      setActiveMultiWeek: (schedule: MultiWeekSchedule) => 
+        set(() => ({
+          activeMultiWeekSchedule: schedule,
+          weeks: Array.from(schedule.weeks.values())
+        })),
 
       resetToDefaults: () =>
         set({

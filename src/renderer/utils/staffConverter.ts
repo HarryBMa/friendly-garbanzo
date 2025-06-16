@@ -1,7 +1,11 @@
 // staffConverter.ts
 // Utility functions to convert ParsedStaff data from ExcelJS parser to StaffMember format
 
-import type { ParsedStaff, Role, StaffMember } from '../types';
+import type { ParsedStaff as OriginalParsedStaff, Role, StaffMember } from '../types';
+import type { ParsedStaff as MultiWeekParsedStaff } from './multiWeekExcelParser';
+
+// Support both original and multi-week parsed staff formats
+type ParsedStaff = OriginalParsedStaff | MultiWeekParsedStaff;
 
 /**
  * Convert ParsedStaff array from new Excel parser to StaffMember array for app store
@@ -164,6 +168,68 @@ export function getParsedStaffSummary(parsedStaff: ParsedStaff[]) {
       ane_usk: parsedStaff.filter(s => s.role === 'ane_usk').length
     },
     weekdays: Object.keys(groupParsedStaffByWeekday(parsedStaff))
+  };
+  
+  return summary;
+}
+
+/**
+ * Convert multi-week parsed staff to organized week structure
+ */
+export function convertMultiWeekStaffToWeeks(parsedStaff: MultiWeekParsedStaff[]): Map<number, Map<string, StaffMember[]>> {
+  const weekMap = new Map<number, Map<string, StaffMember[]>>();
+  
+  // Group by week number first
+  const staffByWeek = parsedStaff.reduce((acc, staff) => {
+    const weekNum = staff.weekNumber;
+    if (!acc[weekNum]) {
+      acc[weekNum] = [];
+    }
+    acc[weekNum].push(staff);
+    return acc;
+  }, {} as Record<number, MultiWeekParsedStaff[]>);
+  
+  // Convert each week's staff to StaffMembers organized by day
+  Object.entries(staffByWeek).forEach(([weekNumStr, weekStaff]) => {
+    const weekNum = parseInt(weekNumStr);
+    const dayMap = new Map<string, StaffMember[]>();
+    
+    // Convert this week's staff using existing conversion logic
+    const staffMembers = convertParsedStaffToMembers(weekStaff);
+    
+    // Group by day
+    staffMembers.forEach(member => {
+      // Extract day from name format "Name (Weekday)"
+      const dayMatch = member.name.match(/\(([^)]+)\)$/);
+      if (dayMatch) {
+        const day = dayMatch[1];
+        if (!dayMap.has(day)) {
+          dayMap.set(day, []);
+        }
+        dayMap.get(day)!.push(member);
+      }
+    });
+    
+    weekMap.set(weekNum, dayMap);
+  });
+  
+  return weekMap;
+}
+
+/**
+ * Get multi-week summary statistics
+ */
+export function getMultiWeekSummary(parsedStaff: MultiWeekParsedStaff[]) {
+  const weekNumbers = [...new Set(parsedStaff.map(s => s.weekNumber))].sort((a, b) => a - b);
+  const summary = {
+    ...getParsedStaffSummary(parsedStaff),
+    weekSpan: weekNumbers.length > 0 ? `v.${weekNumbers[0]}-${weekNumbers[weekNumbers.length - 1]}` : '',
+    totalWeeks: weekNumbers.length,
+    weeks: weekNumbers,
+    staffPerWeek: weekNumbers.reduce((acc, weekNum) => {
+      acc[weekNum] = parsedStaff.filter(s => s.weekNumber === weekNum).length;
+      return acc;
+    }, {} as Record<number, number>)
   };
   
   return summary;

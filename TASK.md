@@ -184,6 +184,78 @@
 
 ---
 
+## 📋 Active Tasks
+
+### [2025-06-15] Import Workflow Clarification
+**Task**: Focus on importing already-formatted scheduler files (like "Ane v.22-35.xlsx") into the app
+**Decision**: Heroma → formatted file transformation will be handled by separate application
+**Status**: ✅ Scope clarified - focus on formatted file import and staff card creation
+
+### [2025-06-15] Multi-Week Excel Import & Independent File Upload System
+**Task**: Upgrade import system to handle multi-week Excel files (v.22-35) with separate sheets and allow independent OP/ANE file uploads
+**Requirements**:
+- ✅ Parse multi-week Excel files with sheet-based week separation
+- ✅ Allow single file uploads (OP or ANE) to show staff cards independently  
+- ✅ Smart merging when second file is uploaded (detect changes and update)
+- ✅ Week/day navigation UI for extended planning periods
+- ✅ Enhanced error handling for file conflicts and updates
+
+**Technical Implementation Completed**:
+- ✅ Created `multiWeekExcelParser.ts` with sheet-based parsing for multiple weeks
+- ✅ Enhanced `staffConverter.ts` with multi-week conversion functions  
+- ✅ Extended app store with multi-week support (`MultiWeekSchedule`, `importMultiWeekFile`, `importIndependentFile`)
+- ✅ Added `enhancedImportHandlers.ts` for browser-based file selection
+- ✅ Updated `AvailableStaffPanel` with new import buttons (multi-week + independent file)
+- ✅ Enhanced Admin component with new import handlers
+- ✅ Created comprehensive test suite for multi-week parsing and merging
+- ✅ Added TypeScript interfaces for multi-week data structures
+
+**Features Implemented**:
+- 📅 **Multi-week Import**: Import Excel files spanning multiple weeks (v.22-35)
+- 📄 **Independent File Upload**: Upload OP or ANE files separately with smart merging
+- 🔄 **Smart Merging**: Detect conflicts and additions when combining data sources
+- 🗓️ **Extended Week Navigation**: Navigate across imported week ranges
+- ⚠️ **Enhanced Error Handling**: Detailed warnings and conflict resolution
+- 🧪 **Full Test Coverage**: Unit tests for parsing, conversion, and merging logic
+
+**Status**: ✅ **COMPLETED** - Ready for testing with real multi-week Excel files
+
+### [2025-06-15] UI Cleanup - Remove Legacy Import Buttons
+**Task**: Clean up import interface by removing legacy import buttons and keeping only the new multi-week functionality
+**Completed**:
+- ✅ Removed "Importera OP + ANE" (dual import) button
+- ✅ Removed "Importera enskild fil" (single file import) button
+- ✅ Cleaned up AvailableStaffPanel props and interface
+- ✅ Updated Admin component to use only new import handlers
+- ✅ Simplified import UI to focus on multi-week workflow
+
+**Final Import UI**:
+- 📅 **"Importera Schema (v.XX-XX)"** - Primary multi-week import
+- 📄 **"Importera OP/ANE Fil"** - Independent file upload with merging
+- ➕ **"Lägg till"** - Manual staff addition
+
+**Status**: ✅ **COMPLETED** - Streamlined import interface ready for use
+
+### [2025-06-04] Admin.tsx Modular Refactoring
+**Problem**: Admin.tsx is 861 lines, exceeding the 500-line guideline from PLANNING.md
+**Goal**: Split into smaller, testable modules following feature-based organization
+**Plan**: 
+- Phase 1: Resolve DroppableZone conflicts by creating shared component
+- Phase 2: Extract admin-specific modules (AvailableStaffPanel, CustomStaffDialog, etc.)
+- Phase 3: Create shared DnD components (SortableStaffItem, DroppableZone)
+**Status**: ✅ **COMPLETED**
+
+### [2025-06-15] Import Button Consolidation
+**Problem**: Two import buttons causing user confusion; need unified import experience
+**Solution**: Consolidated to single purple "Importera Schema" button using unified import handler
+**Changes**:
+- ✅ Updated `Admin.tsx` to use `handleUnifiedExcelImport` instead of separate handlers
+- ✅ Removed legacy `handleMultiWeekImport` and `handleIndependentFileImport` function calls
+- ✅ Consolidated import props in `AvailableStaffPanel` to single `onImportExcel` handler
+- ✅ Verified no remaining references to old separate import handlers
+- ✅ Maintained all existing functionality (multi-week, OP/ANE detection, smart merging)
+**Result**: Single, intuitive import button that automatically detects file type and handles appropriately
+
 ## ⏳ IMMEDIATE ACTION ITEMS
 
 ### **[MEDIUM] Complete Tab Component Modernization**
@@ -211,61 +283,30 @@
 - Phase 1: Resolve DroppableZone conflicts by creating shared component
 - Phase 2: Extract admin-specific modules (AvailableStaffPanel, CustomStaffDialog, etc.)
 - Phase 3: Create shared DnD components (SortableStaffItem, DroppableZone)
-**Status**: 🔄 **IN PROGRESS**
+**Status**: ✅ **COMPLETED**
 
----
+### **[HIGH] Network Drive Multi-User Synchronization**
+**Priority**: HIGH
+**Date Added**: 2025-06-15
+**Task**: Implement real-time synchronization for multiple users accessing the app simultaneously from a network drive
+**Requirements**:
+- ✅ App runs portably from network drive location
+- ✅ Multiple users can open the app concurrently on different PCs
+- ✅ Schedule changes from any user are immediately visible to all other users
+- ✅ File-based synchronization system using shared network storage
+- ✅ Conflict resolution for simultaneous edits
+- ✅ Automatic refresh/polling mechanism for detecting changes
+**Files to Create/Update**: 
+- New `src/main/syncHandler.ts` for file-based synchronization
+- Update `src/renderer/stores/appStore.ts` for network-aware state management
+- Update `src/main/main.ts` for IPC handlers
+- New `src/renderer/hooks/useNetworkSync.ts` for real-time updates
+**Expected Outcome**: Seamless multi-user collaboration with real-time schedule synchronization
 
-## 🧪 Prompt Guidelines
-- Each time you generate code with AI or Copilot:
-  - Log the date
-  - Summarize the task/prompt
-  - Log the result or new files created/edited
-- Keep AI tasks specific and modular (1 file or behavior at a time)
-- Avoid multi-purpose prompts — split UI and logic tasks separately
-- **PRIORITY**: Address critical functionality breaks before cosmetic improvements
+## 🎯 Latest Updates
 
----
-
-## 📅 Project Status Summary
-
-**Current State**: ✅ **PRODUCTION READY** - All critical functionality issues resolved
-- ✅ Excel import/export working perfectly
-- ✅ Drag-and-drop operational and stable
-- ✅ TypeScript compilation successful
-- ✅ All unit tests passing (46/46)
-- ✅ **FIXED**: Admin corridor droppable area (staff assignments working correctly)
-- ✅ **FIXED**: Week selector clear functionality (proper reset to defaults)
-- ✅ **FIXED**: Staff card responsiveness with dynamic information display
-- ✅ **IMPROVED**: Dashboard corridor grid with visual indicators
-- ✅ **UPDATED**: Modern tab styling replacing DaisyUI classes
-- ✅ Production build successful
-
-**Application Features**:
-- ✅ Complete Excel dual-import system (OP + ANE files)
-- ✅ Professional drag-and-drop staff assignment interface
-- ✅ Responsive design adapting to different screen sizes
-- ✅ Visual indicators for lunch coverage and pager assignments
-- ✅ Settings management for rooms and corridor functions
-- ✅ Data persistence with Zustand store
-- ✅ Modern UI with Tailwind CSS styling
-
-**Technical Health**:
-- ✅ Zero TypeScript compilation errors
-- ✅ All 46 unit tests passing
-- ✅ Clean build process (warnings only about bundle size optimization)
-- ✅ Proper error handling and user feedback
-- ✅ Backward compatibility maintained
-
-**Next Steps** (Optional Enhancements): 
-1. **MEDIUM**: Complete remaining DaisyUI → Tailwind CSS migration
-2. **LOW**: Bundle size optimization and code splitting
-3. **LOW**: Additional UI polish and accessibility improvements
-
-### [2025-06-04] Admin.tsx Modular Refactoring
-**Problem**: Admin.tsx is 861 lines, exceeding the 500-line guideline from PLANNING.md
-**Goal**: Split into smaller, testable modules following feature-based organization
-**Plan**: 
-- Phase 1: Resolve DroppableZone conflicts by creating shared component
-- Phase 2: Extract admin-specific modules (AvailableStaffPanel, CustomStaffDialog, etc.)
-- Phase 3: Create shared DnD components (SortableStaffItem, DroppableZone)
-**Status**: 🔄 **IN PROGRESS**
+### Import UI Simplification - June 15, 2025
+✅ **Consolidated two import buttons into one purple "Importera Schema" button**
+- Uses unified import handler that automatically detects file types
+- Maintains all existing functionality (multi-week, OP/ANE detection, smart merging)
+- Simplified user experience with intelligent backend processing

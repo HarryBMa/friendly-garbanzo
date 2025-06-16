@@ -9,8 +9,7 @@ interface AvailableStaffPanelProps {
   workHoursFilter: string;
   onStaffFilterChange: (filter: string) => void;
   onWorkHoursFilterChange: (filter: string) => void;
-  onImportDualExcel: () => void;
-  onImportExcel: () => void;
+  onImportExcel?: () => void;
   onAddCustomStaff: () => void;
   onClearAvailableStaff: () => void;
   onUpdateStaff: (staffId: string, updates: Partial<StaffMember>) => void;
@@ -27,7 +26,6 @@ export default function AvailableStaffPanel({
   workHoursFilter,
   onStaffFilterChange,
   onWorkHoursFilterChange,
-  onImportDualExcel,
   onImportExcel,
   onAddCustomStaff,
   onClearAvailableStaff,
@@ -51,36 +49,27 @@ export default function AvailableStaffPanel({
     <div className="lg:col-span-1">
       <div className="bg-white shadow-sm rounded-lg border border-gray-200">
         <div className="p-4">
-          <h2 className="text-lg font-semibold">{sv.staff.available}</h2>
-          
-          {/* Import/Add Controls */}
+          <h2 className="text-lg font-semibold">{sv.staff.available}</h2>          {/* Import/Add Controls */}
           <div className="space-y-2 mb-4">
-            {/* Primary: Dual Import */}
-            <button 
-              className="w-full px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 font-medium"
-              onClick={onImportDualExcel}
-              title="Importera både OP- och ANE-filer tillsammans"
-            >
-              {sv.actions.importDual}
-            </button>
-            
-            {/* Secondary actions */}
-            <div className="flex gap-2">
+            {/* Combined Import Button */}
+            {onImportExcel && (
               <button 
-                className="px-3 py-1.5 bg-gray-500 text-white text-xs rounded hover:bg-gray-600 flex-1"
+                className="w-full px-3 py-2 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 font-medium"
                 onClick={onImportExcel}
-                title="Importera en enskild Excel-fil"
+                title="Importera Excel-schema (hanterar automatiskt OP/ANE och flera veckor)"
               >
-                {sv.actions.importSingle}
+                📄 Importera Schema
               </button>
-              <button 
-                className="px-3 py-1.5 bg-green-600 text-white text-xs rounded hover:bg-green-700 flex-1"
-                onClick={onAddCustomStaff}
-                title="Lägg till tillfällig personal manuellt"
-              >
-                {sv.actions.add}
-              </button>
-            </div>
+            )}
+            
+            {/* Manual Add */}
+            <button 
+              className="w-full px-3 py-1.5 bg-green-600 text-white text-xs rounded hover:bg-green-700"
+              onClick={onAddCustomStaff}
+              title="Lägg till tillfällig personal manuellt"
+            >
+              {sv.actions.add}
+            </button>
             
             {/* Clear available staff button */}
             <button

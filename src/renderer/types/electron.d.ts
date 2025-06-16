@@ -29,6 +29,25 @@ export interface ElectronAPI {
   }>;
   toggleFullscreen: () => Promise<boolean>;
   onMainProcessMessage: (callback: (value: string) => void) => void;
+
+  // Network sync API
+  syncInit: () => Promise<{ success: boolean; clientId: string; error?: string }>;
+  syncSave: (data: { weeks: import('./index').WeekSchedule[] }) => Promise<{
+    success: boolean;
+    conflict?: import('./index').SyncConflict;
+    error?: string;
+  }>;
+  syncLoad: () => Promise<{
+    success: boolean;
+    weeks?: import('./index').WeekSchedule[];
+    error?: string;
+  }>;
+  syncCheckChanges: () => Promise<{
+    hasChanges: boolean;
+    weeks?: import('./index').WeekSchedule[];
+  }>;
+  onSyncFileChanged: (callback: () => void) => void;
+  removeSyncFileChangedListener: (callback: () => void) => void;
 }
 
 declare global {

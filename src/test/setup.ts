@@ -12,5 +12,13 @@ global.window.electronAPI = {
   }),
   exportExcel: async () => ({ success: true, filePath: '' }),
   toggleFullscreen: async () => false,
-  onMainProcessMessage: () => {}
+  onMainProcessMessage: () => {},
+  
+  // Network sync mocks
+  syncInit: async () => ({ success: true, clientId: 'test-client' }),
+  syncSave: async () => ({ success: true }),
+  syncLoad: async () => ({ success: true, weeks: [] }),
+  syncCheckChanges: async () => ({ hasChanges: false }),
+  onSyncFileChanged: () => {},
+  removeSyncFileChangedListener: () => {},
 };
